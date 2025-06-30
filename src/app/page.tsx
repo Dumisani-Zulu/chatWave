@@ -552,14 +552,6 @@ function MessageItem({ message, isCurrentUser, onPreviewFile }: { message: Messa
           )}
         >
           <span>{message.user.name}</span>
-          {message.user.role && (
-            <Badge
-              variant={isCurrentUser ? "secondary" : "default"}
-              className="capitalize"
-            >
-              {message.user.role}
-            </Badge>
-          )}
         </div>
         <p className="whitespace-pre-wrap">{message.content}</p>
         {message.file && (

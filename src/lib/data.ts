@@ -1,11 +1,11 @@
 import type { User, Chat, Message } from './types';
 
 export const mockUsers: User[] = [
-  { id: 'u1', name: 'Alice', avatar: 'https://placehold.co/100x100/89CFF0/444?text=A', role: 'premium', bio: 'Lead Developer | Passionate about building beautiful UIs.' },
-  { id: 'u2', name: 'Bob', avatar: 'https://placehold.co/100x100/1E90FF/FFF?text=B', role: 'admin', bio: 'Project Manager | Keeping things on track.' },
-  { id: 'u3', name: 'Charlie', avatar: 'https://placehold.co/100x100/F089CF/444?text=C', role: 'moderator', bio: 'UX/UI Designer | Making things pixel-perfect.' },
-  { id: 'u4', name: 'Diana', avatar: 'https://placehold.co/100x100/901EFF/FFF?text=D', role: 'free', bio: 'Marketing Specialist.' },
-  { id: 'u5', name: 'Eve', avatar: 'https://placehold.co/100x100/FFC300/444?text=E', role: 'free', bio: 'Content Creator.' },
+  { id: 'u1', name: 'Alice', avatar: 'https://placehold.co/100x100/89CFF0/444?text=A', bio: 'Lead Developer | Passionate about building beautiful UIs.' },
+  { id: 'u2', name: 'Bob', avatar: 'https://placehold.co/100x100/1E90FF/FFF?text=B', bio: 'Project Manager | Keeping things on track.' },
+  { id: 'u3', name: 'Charlie', avatar: 'https://placehold.co/100x100/F089CF/444?text=C', bio: 'UX/UI Designer | Making things pixel-perfect.' },
+  { id: 'u4', name: 'Diana', avatar: 'https://placehold.co/100x100/901EFF/FFF?text=D', bio: 'Marketing Specialist.' },
+  { id: 'u5', name: 'Eve', avatar: 'https://placehold.co/100x100/FFC300/444?text=E', bio: 'Content Creator.' },
 ];
 
 const generateMessages = (users: User[]): Message[] => [

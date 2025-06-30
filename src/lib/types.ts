@@ -2,7 +2,6 @@ export interface User {
   id: string;
   name: string;
   avatar: string;
-  role?: 'admin' | 'moderator' | 'premium' | 'free';
   bio?: string;
 }
 

@@ -27,10 +27,11 @@ import { Textarea } from '@/components/ui/textarea';
 import type { Chat } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Users } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const groupSettingsSchema = z.object({
   name: z.string().min(3, 'Group name must be at least 3 characters'),
-  avatar: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  avatar: z.string().optional().or(z.literal('')),
   description: z.string().max(200, 'Description cannot be longer than 200 characters').optional(),
 });
 
@@ -97,11 +98,38 @@ export function GroupSettingsDialog({ chat, onUpdateGroup, setOpen }: GroupSetti
             name="avatar"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Group Avatar URL</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://example.com/group-avatar.png" {...field} />
-                </FormControl>
-                <FormMessage />
+                <FormLabel>Group Avatar</FormLabel>
+                <Tabs defaultValue="url" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="url">URL</TabsTrigger>
+                    <TabsTrigger value="upload">Upload</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="url" className="pt-2">
+                    <FormControl>
+                      <Input placeholder="https://example.com/group-avatar.png" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </TabsContent>
+                  <TabsContent value="upload" className="pt-2">
+                    <FormControl>
+                      <Input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              form.setValue('avatar', reader.result as string, { shouldValidate: true });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </TabsContent>
+                </Tabs>
               </FormItem>
             )}
           />

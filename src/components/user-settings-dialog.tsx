@@ -25,10 +25,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const userSettingsSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  avatar: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  avatar: z.string().optional().or(z.literal('')),
   bio: z.string().max(160, 'Bio cannot be longer than 160 characters').optional(),
 });
 
@@ -92,11 +93,38 @@ export function UserSettingsDialog({ currentUser, onUpdateUser, setOpen }: UserS
             name="avatar"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Avatar URL</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://example.com/avatar.png" {...field} />
-                </FormControl>
-                <FormMessage />
+                <FormLabel>Avatar</FormLabel>
+                 <Tabs defaultValue="url" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="url">URL</TabsTrigger>
+                    <TabsTrigger value="upload">Upload</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="url" className="pt-2">
+                    <FormControl>
+                      <Input placeholder="https://example.com/avatar.png" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </TabsContent>
+                  <TabsContent value="upload" className="pt-2">
+                    <FormControl>
+                       <Input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              form.setValue('avatar', reader.result as string, { shouldValidate: true });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </TabsContent>
+                </Tabs>
               </FormItem>
             )}
           />

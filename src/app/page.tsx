@@ -67,6 +67,7 @@ import { UserSettingsDialog } from "@/components/user-settings-dialog";
 import { GroupSettingsDialog } from "@/components/group-settings-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FilePreviewDialog } from "@/components/file-preview-dialog";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function ChatPage() {
   const [currentUser, setCurrentUser] = React.useState<User>(mockUsers[0]);
@@ -358,6 +359,7 @@ export default function ChatPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <ThemeToggle />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -365,37 +367,37 @@ export default function ChatPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                       {selectedChat.type === 'group' && (
-                        <>
-                          <Dialog open={isManageGroupOpen} onOpenChange={setIsManageGroupOpen}>
-                            <DialogTrigger asChild>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Users className="mr-2 h-4 w-4" />
-                                <span>Manage Members</span>
-                              </DropdownMenuItem>
-                            </DialogTrigger>
-                            <ManageGroupDialog
-                              chat={selectedChat}
-                              currentUser={currentUser}
-                              onUpdateGroup={handleUpdateGroupMembers}
-                              setOpen={setIsManageGroupOpen}
-                            />
-                          </Dialog>
-                          <Dialog open={isGroupSettingsOpen} onOpenChange={setIsGroupSettingsOpen}>
-                            <DialogTrigger asChild>
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Settings className="mr-2 h-4 w-4" />
-                                <span>Group Settings</span>
-                              </DropdownMenuItem>
-                            </DialogTrigger>
-                            <GroupSettingsDialog
-                              chat={selectedChat}
-                              onUpdateGroup={handleUpdateGroupDetails}
-                              setOpen={setIsGroupSettingsOpen}
-                            />
-                          </Dialog>
-                        </>
-                       )}
+                       <Dialog open={isManageGroupOpen} onOpenChange={setIsManageGroupOpen}>
+                         <DialogTrigger asChild>
+                           {selectedChat.type === 'group' && (
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <Users className="mr-2 h-4 w-4" />
+                              <span>Manage Members</span>
+                            </DropdownMenuItem>
+                           )}
+                         </DialogTrigger>
+                         <ManageGroupDialog
+                           chat={selectedChat}
+                           currentUser={currentUser}
+                           onUpdateGroup={handleUpdateGroupMembers}
+                           setOpen={setIsManageGroupOpen}
+                         />
+                       </Dialog>
+                       <Dialog open={isGroupSettingsOpen} onOpenChange={setIsGroupSettingsOpen}>
+                         <DialogTrigger asChild>
+                            {selectedChat.type === 'group' && (
+                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <Settings className="mr-2 h-4 w-4" />
+                              <span>Group Settings</span>
+                            </DropdownMenuItem>
+                            )}
+                         </DialogTrigger>
+                         <GroupSettingsDialog
+                           chat={selectedChat}
+                           onUpdateGroup={handleUpdateGroupDetails}
+                           setOpen={setIsGroupSettingsOpen}
+                         />
+                       </Dialog>
                        {selectedChat.type === 'dm' && (
                           <DropdownMenuItem>
                             <Users className="mr-2 h-4 w-4" />

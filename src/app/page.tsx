@@ -355,25 +355,6 @@ export default function ChatPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {selectedChat.type === 'group' && (
-                    <Dialog open={isManageGroupOpen} onOpenChange={setIsManageGroupOpen}>
-                      <ManageGroupDialog
-                        chat={selectedChat}
-                        currentUser={currentUser}
-                        onUpdateGroup={handleUpdateGroupMembers}
-                        setOpen={setIsManageGroupOpen}
-                      />
-                    </Dialog>
-                  )}
-                  {selectedChat.type === 'group' && (
-                     <Dialog open={isGroupSettingsOpen} onOpenChange={setIsGroupSettingsOpen}>
-                      <GroupSettingsDialog
-                        chat={selectedChat}
-                        onUpdateGroup={handleUpdateGroupDetails}
-                        setOpen={setIsGroupSettingsOpen}
-                      />
-                    </Dialog>
-                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -383,14 +364,33 @@ export default function ChatPage() {
                     <DropdownMenuContent align="end">
                        {selectedChat.type === 'group' && (
                         <>
-                          <DropdownMenuItem onSelect={() => setIsManageGroupOpen(true)}>
-                            <Users className="mr-2 h-4 w-4" />
-                            <span>Manage Members</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => setIsGroupSettingsOpen(true)}>
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>Group Settings</span>
-                          </DropdownMenuItem>
+                          <Dialog open={isManageGroupOpen} onOpenChange={setIsManageGroupOpen}>
+                            <DialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Users className="mr-2 h-4 w-4" />
+                                <span>Manage Members</span>
+                              </DropdownMenuItem>
+                            </DialogTrigger>
+                            <ManageGroupDialog
+                              chat={selectedChat}
+                              currentUser={currentUser}
+                              onUpdateGroup={handleUpdateGroupMembers}
+                              setOpen={setIsManageGroupOpen}
+                            />
+                          </Dialog>
+                          <Dialog open={isGroupSettingsOpen} onOpenChange={setIsGroupSettingsOpen}>
+                            <DialogTrigger asChild>
+                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Settings className="mr-2 h-4 w-4" />
+                                <span>Group Settings</span>
+                              </DropdownMenuItem>
+                            </DialogTrigger>
+                            <GroupSettingsDialog
+                              chat={selectedChat}
+                              onUpdateGroup={handleUpdateGroupDetails}
+                              setOpen={setIsGroupSettingsOpen}
+                            />
+                          </Dialog>
                         </>
                        )}
                        {selectedChat.type === 'dm' && (

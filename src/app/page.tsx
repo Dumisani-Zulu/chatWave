@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -44,28 +45,84 @@ import {
 import { mockUsers, mockChats, Chat, User, Message } from "@/lib/data";
 import { Logo } from "@/components/logo";
 import { AiFileSuggester } from "@/components/ai-file-suggester";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { CreateGroupDialog } from "@/components/create-group-dialog";
+import { ManageGroupDialog } from "@/components/manage-group-dialog";
 
 const currentUser = mockUsers[0];
 
 export default function ChatPage() {
-  const [selectedChat, setSelectedChat] = React.useState<Chat>(mockChats[0]);
+  const [chats, setChats] = React.useState<Chat[]>(mockChats);
+  const [selectedChat, setSelectedChat] = React.useState<Chat>(chats[0]);
   const [messages, setMessages] = React.useState<Message[]>(
     selectedChat.messages
   );
+  const [isCreateGroupOpen, setIsCreateGroupOpen] = React.useState(false);
+  const [isManageGroupOpen, setIsManageGroupOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (selectedChat) {
+      setMessages(selectedChat.messages);
+    }
+  }, [selectedChat]);
 
   const handleSelectChat = (chat: Chat) => {
     setSelectedChat(chat);
-    setMessages(chat.messages);
   };
 
   const handleSendMessage = (content: string) => {
+    if (!content.trim()) return;
+
     const newMessage: Message = {
       id: `m${Date.now()}`,
       user: currentUser,
       content,
       timestamp: new Date().toISOString(),
     };
-    setMessages((prev) => [...prev, newMessage]);
+
+    const newChats = chats.map((chat) =>
+      chat.id === selectedChat.id
+        ? { ...chat, messages: [...chat.messages, newMessage] }
+        : chat
+    );
+
+    setChats(newChats);
+    const updatedChat = newChats.find((chat) => chat.id === selectedChat.id);
+    if (updatedChat) {
+      setSelectedChat(updatedChat);
+    }
+  };
+
+  const handleCreateGroup = (name: string, memberIds: string[]) => {
+    const newGroup: Chat = {
+      id: `c${Date.now()}`,
+      name,
+      type: "group",
+      users: mockUsers.filter((u) => memberIds.includes(u.id)),
+      messages: [],
+    };
+    const newChats = [newGroup, ...chats];
+    setChats(newChats);
+    setSelectedChat(newGroup);
+    setIsCreateGroupOpen(false);
+  };
+
+  const handleUpdateGroup = (chatId: string, memberIds: string[]) => {
+    const newChats = chats.map((chat) => {
+      if (chat.id === chatId) {
+        return {
+          ...chat,
+          users: mockUsers.filter((u) => memberIds.includes(u.id)),
+        };
+      }
+      return chat;
+    });
+    setChats(newChats);
+    const updatedChat = newChats.find((chat) => chat.id === selectedChat.id);
+    if (updatedChat) {
+      setSelectedChat(updatedChat);
+    }
+    setIsManageGroupOpen(false);
   };
 
   const conversationHistory = messages.map(m => `${m.user.name}: ${m.content}`).join('\n');
@@ -91,12 +148,21 @@ export default function ChatPage() {
               <SidebarGroup>
                 <SidebarGroupLabel className="flex items-center justify-between">
                   <span>Groups</span>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <PlusCircle className="h-4 w-4" />
-                  </Button>
+                  <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <PlusCircle className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <CreateGroupDialog 
+                      currentUser={currentUser} 
+                      onCreateGroup={handleCreateGroup} 
+                      setOpen={setIsCreateGroupOpen}
+                    />
+                  </Dialog>
                 </SidebarGroupLabel>
                 <ScrollArea className="h-48">
-                  {mockChats
+                  {chats
                     .filter((c) => c.type === "group")
                     .map((chat) => (
                       <SidebarMenuItem key={chat.id}>
@@ -118,7 +184,7 @@ export default function ChatPage() {
               <SidebarGroup>
                 <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
                  <ScrollArea className="h-48">
-                {mockChats
+                {chats
                   .filter((c) => c.type === "dm")
                   .map((chat) => {
                     const otherUser = chat.users.find(
@@ -203,9 +269,21 @@ export default function ChatPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon">
-                    <Users className="h-5 w-5" />
-                  </Button>
+                  {selectedChat.type === 'group' && (
+                    <Dialog open={isManageGroupOpen} onOpenChange={setIsManageGroupOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Users className="h-5 w-5" />
+                        </Button>
+                      </DialogTrigger>
+                      <ManageGroupDialog
+                        chat={selectedChat}
+                        currentUser={currentUser}
+                        onUpdateGroup={handleUpdateGroup}
+                        setOpen={setIsManageGroupOpen}
+                      />
+                    </Dialog>
+                  )}
                   <Button variant="ghost" size="icon">
                     <MoreVertical className="h-5 w-5" />
                   </Button>

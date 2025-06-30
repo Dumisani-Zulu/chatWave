@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -64,6 +65,7 @@ import { CreateGroupDialog } from "@/components/create-group-dialog";
 import { ManageGroupDialog } from "@/components/manage-group-dialog";
 import { UserSettingsDialog } from "@/components/user-settings-dialog";
 import { GroupSettingsDialog } from "@/components/group-settings-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ChatPage() {
   const [currentUser, setCurrentUser] = React.useState<User>(mockUsers[0]);
@@ -203,80 +205,92 @@ export default function ChatPage() {
               <span>ChatWave</span>
             </div>
           </SidebarHeader>
-          <SidebarContent>
+          <SidebarContent className="flex flex-col">
             <div className="p-2">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search..." className="pl-8" />
               </div>
             </div>
-            <SidebarMenu>
-              <SidebarGroup>
-                <SidebarGroupLabel className="flex items-center justify-between">
-                  <span>Groups</span>
-                  <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-6 w-6">
-                        <PlusCircle className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <CreateGroupDialog 
-                      currentUser={currentUser} 
-                      onCreateGroup={handleCreateGroup} 
-                      setOpen={setIsCreateGroupOpen}
-                    />
-                  </Dialog>
-                </SidebarGroupLabel>
-                <ScrollArea className="h-48">
-                  {chats
-                    .filter((c) => c.type === "group")
-                    .map((chat) => (
-                      <SidebarMenuItem key={chat.id}>
-                        <SidebarMenuButton
-                          onClick={() => handleSelectChat(chat)}
-                          isActive={selectedChat.id === chat.id}
-                          className="justify-start"
-                          tooltip={chat.name}
-                        >
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={chat.avatar} alt={chat.name} />
-                            <AvatarFallback>{chat.name[0]}</AvatarFallback>
-                          </Avatar>
-                          <span className="truncate">{chat.name}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                </ScrollArea>
-              </SidebarGroup>
-              <SidebarGroup>
-                <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
-                 <ScrollArea className="h-48">
-                {chats
-                  .filter((c) => c.type === "dm")
-                  .map((chat) => {
-                    const otherUser = chat.users.find(
-                      (u) => u.id !== currentUser.id
-                    );
-                    return (
-                      <SidebarMenuItem key={chat.id}>
-                        <SidebarMenuButton
-                          onClick={() => handleSelectChat(chat)}
-                          isActive={selectedChat.id === chat.id}
-                          className="justify-start"
-                          tooltip={otherUser?.name}
-                        >
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={otherUser?.avatar} alt={otherUser?.name} />
-                            <AvatarFallback>{otherUser?.name[0]}</AvatarFallback>
-                          </Avatar>
-                          <span className="truncate">{otherUser?.name}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                  </ScrollArea>
-              </SidebarGroup>
-            </SidebarMenu>
+            <Tabs defaultValue="groups" className="flex flex-1 flex-col overflow-hidden">
+              <div className="px-2">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="groups">Groups</TabsTrigger>
+                  <TabsTrigger value="chats">Chats</TabsTrigger>
+                </TabsList>
+              </div>
+              <ScrollArea className="flex-1">
+                <TabsContent value="groups" className="mt-0">
+                  <SidebarMenu>
+                    <SidebarGroup>
+                      <SidebarGroupLabel className="flex items-center justify-between">
+                        <span>Groups</span>
+                        <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                              <PlusCircle className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <CreateGroupDialog 
+                            currentUser={currentUser} 
+                            onCreateGroup={handleCreateGroup} 
+                            setOpen={setIsCreateGroupOpen}
+                          />
+                        </Dialog>
+                      </SidebarGroupLabel>
+                      {chats
+                        .filter((c) => c.type === "group")
+                        .map((chat) => (
+                          <SidebarMenuItem key={chat.id}>
+                            <SidebarMenuButton
+                              onClick={() => handleSelectChat(chat)}
+                              isActive={selectedChat.id === chat.id}
+                              className="justify-start"
+                              tooltip={chat.name}
+                            >
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={chat.avatar} alt={chat.name} />
+                                <AvatarFallback>{chat.name[0]}</AvatarFallback>
+                              </Avatar>
+                              <span className="truncate">{chat.name}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                    </SidebarGroup>
+                  </SidebarMenu>
+                </TabsContent>
+                <TabsContent value="chats" className="mt-0">
+                  <SidebarMenu>
+                    <SidebarGroup>
+                      <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
+                      {chats
+                        .filter((c) => c.type === "dm")
+                        .map((chat) => {
+                          const otherUser = chat.users.find(
+                            (u) => u.id !== currentUser.id
+                          );
+                          return (
+                            <SidebarMenuItem key={chat.id}>
+                              <SidebarMenuButton
+                                onClick={() => handleSelectChat(chat)}
+                                isActive={selectedChat.id === chat.id}
+                                className="justify-start"
+                                tooltip={otherUser?.name}
+                              >
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={otherUser?.avatar} alt={otherUser?.name} />
+                                  <AvatarFallback>{otherUser?.name[0]}</AvatarFallback>
+                                </Avatar>
+                                <span className="truncate">{otherUser?.name}</span>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                    </SidebarGroup>
+                  </SidebarMenu>
+                </TabsContent>
+              </ScrollArea>
+            </Tabs>
           </SidebarContent>
           <SidebarFooter>
             <div className="flex items-center justify-between p-2">

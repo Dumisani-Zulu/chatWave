@@ -41,7 +41,8 @@ const generateMessages = (users: User[]): Message[] => [
     file: {
         name: 'Financial_Report_Q2.pdf',
         url: '#',
-        size: '1.2MB'
+        size: '1.2MB',
+        type: 'application/pdf',
     }
   },
 ];
@@ -106,7 +107,8 @@ export const mockChats: Chat[] = [
             file: {
                 name: "Meeting_Notes.docx",
                 url: "#",
-                size: "45KB"
+                size: "45KB",
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             }
         }
     ]

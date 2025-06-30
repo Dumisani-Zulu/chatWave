@@ -15,6 +15,7 @@ export interface Message {
     name: string;
     url: string;
     size: string;
+    type: string;
   };
 }
 

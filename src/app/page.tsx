@@ -66,6 +66,7 @@ import { ManageGroupDialog } from "@/components/manage-group-dialog";
 import { UserSettingsDialog } from "@/components/user-settings-dialog";
 import { GroupSettingsDialog } from "@/components/group-settings-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FilePreviewDialog } from "@/components/file-preview-dialog";
 
 export default function ChatPage() {
   const [currentUser, setCurrentUser] = React.useState<User>(mockUsers[0]);
@@ -81,6 +82,7 @@ export default function ChatPage() {
   const [messageContent, setMessageContent] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [previewFile, setPreviewFile] = React.useState<Message['file'] | null>(null);
 
 
   React.useEffect(() => {
@@ -106,6 +108,7 @@ export default function ChatPage() {
           name: selectedFile.name,
           url: URL.createObjectURL(selectedFile),
           size: `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`,
+          type: selectedFile.type,
       } : undefined,
     };
 
@@ -412,6 +415,7 @@ export default function ChatPage() {
                         key={message.id}
                         message={message}
                         isCurrentUser={message.user.id === currentUser.id}
+                        onPreviewFile={setPreviewFile}
                       />
                     ))}
                   </div>
@@ -504,12 +508,13 @@ export default function ChatPage() {
             </div>
           )}
         </SidebarInset>
+        <FilePreviewDialog file={previewFile} onClose={() => setPreviewFile(null)} />
       </div>
     </SidebarProvider>
   );
 }
 
-function MessageItem({ message, isCurrentUser }: { message: Message, isCurrentUser: boolean }) {
+function MessageItem({ message, isCurrentUser, onPreviewFile }: { message: Message; isCurrentUser: boolean; onPreviewFile: (file: Message['file']) => void; }) {
   React.useEffect(() => {
     const fileUrl = message.file?.url;
     if (fileUrl && fileUrl.startsWith('blob:')) {
@@ -556,7 +561,10 @@ function MessageItem({ message, isCurrentUser }: { message: Message, isCurrentUs
         </div>
         <p className="whitespace-pre-wrap">{message.content}</p>
         {message.file && (
-          <div className="mt-2 flex items-center gap-2 rounded-md border border-border/50 bg-background/50 p-2 text-card-foreground">
+          <div 
+            className="mt-2 flex cursor-pointer items-center gap-2 rounded-md border border-border/50 bg-background/50 p-2 text-card-foreground transition-colors hover:bg-accent"
+            onClick={() => onPreviewFile(message.file!)}
+          >
             <File className="h-5 w-5 shrink-0" />
             <span className="text-sm truncate">{message.file.name}</span>
           </div>

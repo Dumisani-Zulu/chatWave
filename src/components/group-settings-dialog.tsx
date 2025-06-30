@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -25,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Chat } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { Users } from 'lucide-react';
 
 const groupSettingsSchema = z.object({
   name: z.string().min(3, 'Group name must be at least 3 characters'),
@@ -69,6 +71,12 @@ export function GroupSettingsDialog({ chat, onUpdateGroup, setOpen }: GroupSetti
           Update the details for '{chat.name}'.
         </DialogDescription>
       </DialogHeader>
+      
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Users className="h-4 w-4 mr-2" />
+        <span>{chat.users.length} {chat.users.length === 1 ? 'member' : 'members'}</span>
+      </div>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField

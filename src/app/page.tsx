@@ -11,8 +11,12 @@ import {
   Search,
   Send,
   Settings,
+  Smile,
   Users,
+  X,
 } from "lucide-react";
+import EmojiPicker from 'emoji-picker-react';
+
 
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,6 +51,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { mockUsers, mockChats, Chat, User, Message } from "@/lib/data";
 import { Logo } from "@/components/logo";
 import { AiFileSuggester } from "@/components/ai-file-suggester";
@@ -67,6 +76,9 @@ export default function ChatPage() {
   const [isManageGroupOpen, setIsManageGroupOpen] = React.useState(false);
   const [isUserSettingsOpen, setIsUserSettingsOpen] = React.useState(false);
   const [isGroupSettingsOpen, setIsGroupSettingsOpen] = React.useState(false);
+  const [messageContent, setMessageContent] = React.useState("");
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
 
   React.useEffect(() => {
@@ -79,14 +91,20 @@ export default function ChatPage() {
     setSelectedChat(chat);
   };
 
-  const handleSendMessage = (content: string) => {
-    if (!content.trim()) return;
+  const handleSendMessage = () => {
+    const content = messageContent.trim();
+    if (!content && !selectedFile) return;
 
     const newMessage: Message = {
       id: `m${Date.now()}`,
       user: currentUser,
       content,
       timestamp: new Date().toISOString(),
+      file: selectedFile ? {
+          name: selectedFile.name,
+          url: URL.createObjectURL(selectedFile),
+          size: `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`,
+      } : undefined,
     };
 
     const newChats = chats.map((chat) =>
@@ -99,6 +117,12 @@ export default function ChatPage() {
     const updatedChat = newChats.find((chat) => chat.id === selectedChat.id);
     if (updatedChat) {
       setSelectedChat(updatedChat);
+    }
+    
+    setMessageContent("");
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
     }
   };
 
@@ -150,13 +174,11 @@ export default function ChatPage() {
   const handleUpdateUser = (updatedUser: User) => {
     setCurrentUser(updatedUser);
     
-    // Update user in mockUsers list
     const userIndex = mockUsers.findIndex(u => u.id === updatedUser.id);
     if (userIndex !== -1) {
         mockUsers[userIndex] = updatedUser;
     }
 
-    // Update user across all chats
     const updatedChats = chats.map(chat => ({
         ...chat,
         users: chat.users.map(user => user.id === updatedUser.id ? updatedUser : user),
@@ -383,23 +405,48 @@ export default function ChatPage() {
               </main>
 
               <footer className="border-t bg-background p-4">
+                {selectedFile && (
+                  <div className="mb-2 flex items-center justify-between rounded-lg border bg-muted/50 p-2 text-sm">
+                    <div className="flex items-center gap-2 font-medium truncate">
+                      <File className="h-5 w-5 shrink-0" />
+                      <span className="truncate">{selectedFile.name}</span>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setSelectedFile(null)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
                 <div className="relative">
                   <Textarea
                     placeholder="Type a message..."
-                    className="min-h-[48px] resize-none rounded-2xl pr-24"
+                    className="min-h-[48px] resize-none rounded-2xl pr-28"
+                    value={messageContent}
+                    onChange={(e) => setMessageContent(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        handleSendMessage(e.currentTarget.value);
-                        e.currentTarget.value = "";
+                        handleSendMessage();
                       }
                     }}
                   />
-                  <div className="absolute right-3 top-3 flex items-center gap-2">
+                  <div className="absolute right-2 top-2 flex items-center gap-1">
+                     <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Smile className="h-5 w-5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent side="top" align="end" className="w-auto p-0 border-0 mb-1">
+                          <EmojiPicker 
+                            onEmojiClick={(emojiObject) => setMessageContent(prev => prev + emojiObject.emoji)} 
+                            pickerStyle={{width: '100%'}}
+                          />
+                        </PopoverContent>
+                      </Popover>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fileInputRef.current?.click()}>
                             <Paperclip className="h-5 w-5" />
                           </Button>
                         </TooltipTrigger>
@@ -408,21 +455,27 @@ export default function ChatPage() {
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    <Button
-                      size="icon"
-                      onClick={() => {
-                        const textarea = document.querySelector('textarea');
-                        if (textarea?.value) {
-                            handleSendMessage(textarea.value);
-                            textarea.value = '';
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          setSelectedFile(e.target.files[0]);
                         }
                       }}
+                    />
+                    <Button
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={handleSendMessage}
+                      disabled={!messageContent.trim() && !selectedFile}
                     >
                       <Send className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
-                 <AiFileSuggester conversationHistory={conversationHistory} />
+                <AiFileSuggester conversationHistory={conversationHistory} />
               </footer>
             </>
           ) : (
@@ -443,6 +496,15 @@ export default function ChatPage() {
 }
 
 function MessageItem({ message, isCurrentUser }: { message: Message, isCurrentUser: boolean }) {
+  React.useEffect(() => {
+    const fileUrl = message.file?.url;
+    if (fileUrl && fileUrl.startsWith('blob:')) {
+      return () => {
+        URL.revokeObjectURL(fileUrl);
+      };
+    }
+  }, [message.file?.url]);
+  
   return (
     <div
       className={cn(

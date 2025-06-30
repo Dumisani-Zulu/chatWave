@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -42,16 +41,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { mockUsers, mockChats, Chat, User, Message } from "@/lib/data";
 import { Logo } from "@/components/logo";
 import { AiFileSuggester } from "@/components/ai-file-suggester";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { CreateGroupDialog } from "@/components/create-group-dialog";
 import { ManageGroupDialog } from "@/components/manage-group-dialog";
-
-const currentUser = mockUsers[0];
+import { UserSettingsDialog } from "@/components/user-settings-dialog";
+import { GroupSettingsDialog } from "@/components/group-settings-dialog";
 
 export default function ChatPage() {
+  const [currentUser, setCurrentUser] = React.useState<User>(mockUsers[0]);
   const [chats, setChats] = React.useState<Chat[]>(mockChats);
   const [selectedChat, setSelectedChat] = React.useState<Chat>(chats[0]);
   const [messages, setMessages] = React.useState<Message[]>(
@@ -59,6 +65,9 @@ export default function ChatPage() {
   );
   const [isCreateGroupOpen, setIsCreateGroupOpen] = React.useState(false);
   const [isManageGroupOpen, setIsManageGroupOpen] = React.useState(false);
+  const [isUserSettingsOpen, setIsUserSettingsOpen] = React.useState(false);
+  const [isGroupSettingsOpen, setIsGroupSettingsOpen] = React.useState(false);
+
 
   React.useEffect(() => {
     if (selectedChat) {
@@ -100,6 +109,8 @@ export default function ChatPage() {
       type: "group",
       users: mockUsers.filter((u) => memberIds.includes(u.id)),
       messages: [],
+      avatar: `https://placehold.co/100x100/A9A9A9/FFF?text=${name.substring(0,2).toUpperCase()}`,
+      description: "A new group chat.",
     };
     const newChats = [newGroup, ...chats];
     setChats(newChats);
@@ -107,8 +118,8 @@ export default function ChatPage() {
     setIsCreateGroupOpen(false);
   };
 
-  const handleUpdateGroup = (chatId: string, memberIds: string[]) => {
-    const newChats = chats.map((chat) => {
+  const handleUpdateGroupMembers = (chatId: string, memberIds: string[]) => {
+    const updatedChats = chats.map((chat) => {
       if (chat.id === chatId) {
         return {
           ...chat,
@@ -117,13 +128,46 @@ export default function ChatPage() {
       }
       return chat;
     });
-    setChats(newChats);
-    const updatedChat = newChats.find((chat) => chat.id === selectedChat.id);
-    if (updatedChat) {
-      setSelectedChat(updatedChat);
+    setChats(updatedChats);
+    const updatedSelectedChat = updatedChats.find((chat) => chat.id === selectedChat.id);
+    if (updatedSelectedChat) {
+      setSelectedChat(updatedSelectedChat);
     }
     setIsManageGroupOpen(false);
   };
+  
+  const handleUpdateGroupDetails = (chatId: string, details: { name: string; description?: string; avatar?: string }) => {
+    const updatedChats = chats.map((chat) => 
+      chat.id === chatId ? { ...chat, ...details } : chat
+    );
+    setChats(updatedChats);
+    if (selectedChat?.id === chatId) {
+        setSelectedChat(prev => prev ? { ...prev, ...details } : null);
+    }
+    setIsGroupSettingsOpen(false);
+  };
+
+  const handleUpdateUser = (updatedUser: User) => {
+    setCurrentUser(updatedUser);
+    
+    // Update user in mockUsers list
+    const userIndex = mockUsers.findIndex(u => u.id === updatedUser.id);
+    if (userIndex !== -1) {
+        mockUsers[userIndex] = updatedUser;
+    }
+
+    // Update user across all chats
+    const updatedChats = chats.map(chat => ({
+        ...chat,
+        users: chat.users.map(user => user.id === updatedUser.id ? updatedUser : user),
+        messages: chat.messages.map(message => ({
+            ...message,
+            user: message.user.id === updatedUser.id ? updatedUser : message.user,
+        })),
+    }));
+    setChats(updatedChats);
+  };
+
 
   const conversationHistory = messages.map(m => `${m.user.name}: ${m.content}`).join('\n');
 
@@ -173,6 +217,7 @@ export default function ChatPage() {
                           tooltip={chat.name}
                         >
                           <Avatar className="h-6 w-6">
+                            <AvatarImage src={chat.avatar} alt={chat.name} />
                             <AvatarFallback>{chat.name[0]}</AvatarFallback>
                           </Avatar>
                           <span className="truncate">{chat.name}</span>
@@ -213,30 +258,30 @@ export default function ChatPage() {
           </SidebarContent>
           <SidebarFooter>
             <div className="flex items-center justify-between p-2">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <Avatar className="h-8 w-8 shrink-0">
                   <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
                   <AvatarFallback>{currentUser.name[0]}</AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col text-sm">
-                  <span className="font-semibold">{currentUser.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    Online
+                <div className="flex flex-col text-sm overflow-hidden">
+                  <span className="font-semibold truncate">{currentUser.name}</span>
+                  <span className="text-xs text-muted-foreground truncate" title={currentUser.bio}>
+                    {currentUser.bio || "No bio"}
                   </span>
                 </div>
               </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Settings</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Dialog open={isUserSettingsOpen} onOpenChange={setIsUserSettingsOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <UserSettingsDialog 
+                  currentUser={currentUser} 
+                  onUpdateUser={handleUpdateUser}
+                  setOpen={setIsUserSettingsOpen}
+                />
+              </Dialog>
             </div>
           </SidebarFooter>
         </Sidebar>
@@ -244,9 +289,12 @@ export default function ChatPage() {
           {selectedChat ? (
             <>
               <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 overflow-hidden">
                   <SidebarTrigger className="md:hidden" />
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage 
+                      src={selectedChat.type === 'dm' ? selectedChat.users.find(u => u.id !== currentUser.id)?.avatar : selectedChat.avatar} 
+                      alt={selectedChat.name} />
                     <AvatarFallback>
                       {selectedChat.type === "dm"
                         ? selectedChat.users.find(
@@ -255,38 +303,68 @@ export default function ChatPage() {
                         : selectedChat.name[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <h2 className="font-semibold font-headline">
+                  <div className="overflow-hidden">
+                    <h2 className="font-semibold font-headline truncate">
                       {selectedChat.type === "dm"
                         ? selectedChat.users.find(
                             (u) => u.id !== currentUser.id
                           )?.name
                         : selectedChat.name}
                     </h2>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedChat.users.length} members
+                    <p className="text-xs text-muted-foreground truncate">
+                      {selectedChat.type === 'group' 
+                        ? (selectedChat.description || `${selectedChat.users.length} members`)
+                        : (selectedChat.users.find(u => u.id !== currentUser.id)?.bio || 'Online')}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {selectedChat.type === 'group' && (
                     <Dialog open={isManageGroupOpen} onOpenChange={setIsManageGroupOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Users className="h-5 w-5" />
-                        </Button>
-                      </DialogTrigger>
                       <ManageGroupDialog
                         chat={selectedChat}
                         currentUser={currentUser}
-                        onUpdateGroup={handleUpdateGroup}
+                        onUpdateGroup={handleUpdateGroupMembers}
                         setOpen={setIsManageGroupOpen}
                       />
                     </Dialog>
                   )}
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-5 w-5" />
-                  </Button>
+                  {selectedChat.type === 'group' && (
+                     <Dialog open={isGroupSettingsOpen} onOpenChange={setIsGroupSettingsOpen}>
+                      <GroupSettingsDialog
+                        chat={selectedChat}
+                        onUpdateGroup={handleUpdateGroupDetails}
+                        setOpen={setIsGroupSettingsOpen}
+                      />
+                    </Dialog>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                       {selectedChat.type === 'group' && (
+                        <>
+                          <DropdownMenuItem onSelect={() => setIsManageGroupOpen(true)}>
+                            <Users className="mr-2 h-4 w-4" />
+                            <span>Manage Members</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => setIsGroupSettingsOpen(true)}>
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Group Settings</span>
+                          </DropdownMenuItem>
+                        </>
+                       )}
+                       {selectedChat.type === 'dm' && (
+                          <DropdownMenuItem>
+                            <Users className="mr-2 h-4 w-4" />
+                            <span>View Profile</span>
+                          </DropdownMenuItem>
+                       )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </header>
 

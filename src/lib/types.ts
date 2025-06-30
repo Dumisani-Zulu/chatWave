@@ -3,6 +3,7 @@ export interface User {
   name: string;
   avatar: string;
   role?: 'admin' | 'moderator' | 'premium' | 'free';
+  bio?: string;
 }
 
 export interface Message {
@@ -23,4 +24,6 @@ export interface Chat {
   type: 'dm' | 'group';
   users: User[];
   messages: Message[];
+  avatar?: string;
+  description?: string;
 }

@@ -1,0 +1,85 @@
+
+"use client";
+
+import * as React from 'react';
+import { SidebarInset } from '@/components/ui/sidebar';
+import { ChatHeader } from '@/components/chat/chat-header';
+import { MessageList } from '@/components/chat/message-list';
+import { MessageForm } from '@/components/chat/message-form';
+import { EmptyChat } from '@/components/chat/empty-chat';
+import type { Chat, Message, User } from '@/lib/types';
+
+interface ChatAreaProps {
+  selectedChat: Chat | null;
+  currentUser: User;
+  messages: Message[];
+  isManageGroupOpen: boolean;
+  setIsManageGroupOpen: (open: boolean) => void;
+  handleUpdateGroupMembers: (chatId: string, memberIds: string[]) => void;
+  isGroupSettingsOpen: boolean;
+  setIsGroupSettingsOpen: (open: boolean) => void;
+  handleUpdateGroupDetails: (chatId: string, details: { name: string; description?: string; avatar?: string }) => void;
+  setPreviewFile: (file: Message['file'] | null) => void;
+  messageContent: string;
+  setMessageContent: (value: string) => void;
+  selectedFile: File | null;
+  setSelectedFile: (file: File | null) => void;
+  handleSendMessage: () => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  conversationHistory: string;
+}
+
+export function ChatArea({
+  selectedChat,
+  currentUser,
+  messages,
+  isManageGroupOpen,
+  setIsManageGroupOpen,
+  handleUpdateGroupMembers,
+  isGroupSettingsOpen,
+  setIsGroupSettingsOpen,
+  handleUpdateGroupDetails,
+  setPreviewFile,
+  messageContent,
+  setMessageContent,
+  selectedFile,
+  setSelectedFile,
+  handleSendMessage,
+  fileInputRef,
+  conversationHistory,
+}: ChatAreaProps) {
+  return (
+    <SidebarInset className="flex flex-col bg-muted/30">
+      {selectedChat ? (
+        <>
+          <ChatHeader
+            selectedChat={selectedChat}
+            currentUser={currentUser}
+            isManageGroupOpen={isManageGroupOpen}
+            setIsManageGroupOpen={setIsManageGroupOpen}
+            handleUpdateGroupMembers={handleUpdateGroupMembers}
+            isGroupSettingsOpen={isGroupSettingsOpen}
+            setIsGroupSettingsOpen={setIsGroupSettingsOpen}
+            handleUpdateGroupDetails={handleUpdateGroupDetails}
+          />
+          <MessageList
+            messages={messages}
+            currentUser={currentUser}
+            onPreviewFile={setPreviewFile}
+          />
+          <MessageForm
+            messageContent={messageContent}
+            setMessageContent={setMessageContent}
+            selectedFile={selectedFile}
+            setSelectedFile={setSelectedFile}
+            handleSendMessage={handleSendMessage}
+            fileInputRef={fileInputRef}
+            conversationHistory={conversationHistory}
+          />
+        </>
+      ) : (
+        <EmptyChat />
+      )}
+    </SidebarInset>
+  );
+}

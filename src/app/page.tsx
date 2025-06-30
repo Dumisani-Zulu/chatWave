@@ -212,14 +212,44 @@ export default function ChatPage() {
                 <Input placeholder="Search..." className="pl-8" />
               </div>
             </div>
-            <Tabs defaultValue="groups" className="flex flex-1 flex-col overflow-hidden">
+            <Tabs defaultValue="chats" className="flex flex-1 flex-col overflow-hidden">
               <div className="px-2">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="groups">Groups</TabsTrigger>
                   <TabsTrigger value="chats">Chats</TabsTrigger>
+                  <TabsTrigger value="groups">Groups</TabsTrigger>
                 </TabsList>
               </div>
               <ScrollArea className="flex-1">
+                <TabsContent value="chats" className="mt-0">
+                  <SidebarMenu>
+                    <SidebarGroup>
+                      <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
+                      {chats
+                        .filter((c) => c.type === "dm")
+                        .map((chat) => {
+                          const otherUser = chat.users.find(
+                            (u) => u.id !== currentUser.id
+                          );
+                          return (
+                            <SidebarMenuItem key={chat.id}>
+                              <SidebarMenuButton
+                                onClick={() => handleSelectChat(chat)}
+                                isActive={selectedChat.id === chat.id}
+                                className="justify-start"
+                                tooltip={otherUser?.name}
+                              >
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={otherUser?.avatar} alt={otherUser?.name} />
+                                  <AvatarFallback>{otherUser?.name[0]}</AvatarFallback>
+                                </Avatar>
+                                <span className="truncate">{otherUser?.name}</span>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                    </SidebarGroup>
+                  </SidebarMenu>
+                </TabsContent>
                 <TabsContent value="groups" className="mt-0">
                   <SidebarMenu>
                     <SidebarGroup>
@@ -256,36 +286,6 @@ export default function ChatPage() {
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}
-                    </SidebarGroup>
-                  </SidebarMenu>
-                </TabsContent>
-                <TabsContent value="chats" className="mt-0">
-                  <SidebarMenu>
-                    <SidebarGroup>
-                      <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
-                      {chats
-                        .filter((c) => c.type === "dm")
-                        .map((chat) => {
-                          const otherUser = chat.users.find(
-                            (u) => u.id !== currentUser.id
-                          );
-                          return (
-                            <SidebarMenuItem key={chat.id}>
-                              <SidebarMenuButton
-                                onClick={() => handleSelectChat(chat)}
-                                isActive={selectedChat.id === chat.id}
-                                className="justify-start"
-                                tooltip={otherUser?.name}
-                              >
-                                <Avatar className="h-6 w-6">
-                                  <AvatarImage src={otherUser?.avatar} alt={otherUser?.name} />
-                                  <AvatarFallback>{otherUser?.name[0]}</AvatarFallback>
-                                </Avatar>
-                                <span className="truncate">{otherUser?.name}</span>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          );
-                        })}
                     </SidebarGroup>
                   </SidebarMenu>
                 </TabsContent>

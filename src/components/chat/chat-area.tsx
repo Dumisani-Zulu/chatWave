@@ -32,6 +32,7 @@ interface ChatAreaProps {
   fileInputRef: React.RefObject<HTMLInputElement>;
   conversationHistory: string;
   handleStartChat: (userId: string) => void;
+  handleViewProfile: (user: User) => void;
 }
 
 export function ChatArea({
@@ -57,6 +58,7 @@ export function ChatArea({
   fileInputRef,
   conversationHistory,
   handleStartChat,
+  handleViewProfile,
 }: ChatAreaProps) {
   return (
     <SidebarInset className="flex flex-col bg-muted/30">
@@ -73,6 +75,7 @@ export function ChatArea({
             setIsGroupSettingsOpen={setIsGroupSettingsOpen}
             handleUpdateGroupDetails={handleUpdateGroupDetails}
             handleDeleteGroup={handleDeleteGroup}
+            handleViewProfile={handleViewProfile}
           />
           <MessageList
             chatId={selectedChat.id}
@@ -81,6 +84,7 @@ export function ChatArea({
             onPreviewFile={setPreviewFile}
             handleDeleteMessage={handleDeleteMessage}
             handleUpdateMessage={handleUpdateMessage}
+            handleViewProfile={handleViewProfile}
           />
           <MessageForm
             messageContent={messageContent}

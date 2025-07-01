@@ -42,6 +42,7 @@ interface ChatHeaderProps {
   setIsGroupSettingsOpen: (open: boolean) => void;
   handleUpdateGroupDetails: (chatId: string, details: { name: string; description?: string; avatar?: string }) => void;
   handleDeleteGroup: (chatId: string) => void;
+  handleViewProfile: (user: User) => void;
 }
 
 export function ChatHeader({
@@ -55,6 +56,7 @@ export function ChatHeader({
   setIsGroupSettingsOpen,
   handleUpdateGroupDetails,
   handleDeleteGroup,
+  handleViewProfile,
 }: ChatHeaderProps) {
   
   const isGroupAdmin = selectedChat.type === 'group' && selectedChat.createdBy === currentUser.id;
@@ -73,22 +75,28 @@ export function ChatHeader({
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-4">
       <div className="flex items-center gap-3 overflow-hidden">
         <SidebarTrigger className="md:hidden" />
-        <Avatar className="h-8 w-8 shrink-0">
-          <AvatarImage
-            src={chatAvatar}
-            alt={chatName} />
-          <AvatarFallback>
-            {chatName?.[0]}
-          </AvatarFallback>
-        </Avatar>
-        <div className="overflow-hidden">
-          <h2 className="font-semibold font-headline truncate">
-            {chatName}
-          </h2>
-          <p className="text-xs text-muted-foreground truncate">
-            {chatDescription}
-          </p>
-        </div>
+        <button
+          className="flex items-center gap-3 overflow-hidden text-left disabled:cursor-default"
+          onClick={() => otherUser && handleViewProfile(otherUser)}
+          disabled={!otherUser}
+        >
+          <Avatar className="h-8 w-8 shrink-0">
+            <AvatarImage
+              src={chatAvatar}
+              alt={chatName} />
+            <AvatarFallback>
+              {chatName?.[0]}
+            </AvatarFallback>
+          </Avatar>
+          <div className="overflow-hidden">
+            <h2 className="font-semibold font-headline truncate">
+              {chatName}
+            </h2>
+            <p className="text-xs text-muted-foreground truncate">
+              {chatDescription}
+            </p>
+          </div>
+        </button>
       </div>
       <div className="flex items-center gap-2">
         <ThemeToggle />
@@ -99,8 +107,8 @@ export function ChatHeader({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {selectedChat.type === 'dm' && (
-              <DropdownMenuItem>
+            {selectedChat.type === 'dm' && otherUser && (
+              <DropdownMenuItem onClick={() => handleViewProfile(otherUser)}>
                 <Users className="mr-2 h-4 w-4" />
                 <span>View Profile</span>
               </DropdownMenuItem>

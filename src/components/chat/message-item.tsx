@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { Button, buttonVariants } from '@/components/ui/button';
-import type { Message } from '@/lib/types';
+import type { Message, User } from '@/lib/types';
 
 interface MessageItemProps {
   chatId: string;
@@ -18,9 +18,10 @@ interface MessageItemProps {
   onPreviewFile: (file: Message['file']) => void;
   handleDeleteMessage: (chatId: string, messageId: string) => void;
   handleUpdateMessage: (chatId: string, messageId: string, content: string) => void;
+  handleViewProfile: (user: User) => void;
 }
 
-export function MessageItem({ chatId, message, isCurrentUser, onPreviewFile, handleDeleteMessage, handleUpdateMessage }: MessageItemProps) {
+export function MessageItem({ chatId, message, isCurrentUser, onPreviewFile, handleDeleteMessage, handleUpdateMessage, handleViewProfile }: MessageItemProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedContent, setEditedContent] = React.useState(message.content);
 
@@ -43,10 +44,16 @@ export function MessageItem({ chatId, message, isCurrentUser, onPreviewFile, han
         isCurrentUser && "flex-row-reverse"
       )}
     >
-      <Avatar className="h-8 w-8">
-        <AvatarImage src={message.user.avatar} alt={message.user.name} />
-        <AvatarFallback>{message.user.name[0]}</AvatarFallback>
-      </Avatar>
+      <button 
+        onClick={() => handleViewProfile(message.user)} 
+        className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        aria-label={`View profile for ${message.user.name}`}
+      >
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={message.user.avatar} alt={message.user.name} />
+          <AvatarFallback>{message.user.name[0]}</AvatarFallback>
+        </Avatar>
+      </button>
       <div
         className={cn(
           "max-w-md rounded-lg p-3",

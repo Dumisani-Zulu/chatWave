@@ -13,6 +13,7 @@ interface MessageListProps {
   onPreviewFile: (file: Message['file']) => void;
   handleDeleteMessage: (chatId: string, messageId: string) => void;
   handleUpdateMessage: (chatId: string, messageId: string, content: string) => void;
+  handleViewProfile: (user: User) => void;
 }
 
 export function MessageList({
@@ -22,6 +23,7 @@ export function MessageList({
   onPreviewFile,
   handleDeleteMessage,
   handleUpdateMessage,
+  handleViewProfile,
 }: MessageListProps) {
   return (
     <main className="flex-1 overflow-hidden">
@@ -36,6 +38,7 @@ export function MessageList({
               onPreviewFile={onPreviewFile}
               handleDeleteMessage={handleDeleteMessage}
               handleUpdateMessage={handleUpdateMessage}
+              handleViewProfile={handleViewProfile}
             />
           ))}
         </div>

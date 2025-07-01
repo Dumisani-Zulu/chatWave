@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from 'react';
-import { PlusCircle, Search, Settings } from 'lucide-react';
+import { PlusCircle, Search } from 'lucide-react';
 import {
   Sidebar,
   SidebarHeader,
@@ -21,7 +21,6 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreateGroupDialog } from '@/components/create-group-dialog';
-import { UserSettingsDialog } from '@/components/user-settings-dialog';
 import { Logo } from '@/components/logo';
 import type { Chat, User } from '@/lib/types';
 
@@ -34,9 +33,8 @@ interface ChatSidebarProps {
   isCreateGroupOpen: boolean;
   setIsCreateGroupOpen: (open: boolean) => void;
   handleCreateGroup: (name: string, memberIds: string[]) => void;
-  isUserSettingsOpen: boolean;
-  setIsUserSettingsOpen: (open: boolean) => void;
   handleUpdateUser: (updatedUser: Partial<User>) => void;
+  handleViewProfile: (user: User) => void;
 }
 
 export function ChatSidebar({
@@ -48,9 +46,8 @@ export function ChatSidebar({
   isCreateGroupOpen,
   setIsCreateGroupOpen,
   handleCreateGroup,
-  isUserSettingsOpen,
-  setIsUserSettingsOpen,
-  handleUpdateUser
+  handleUpdateUser,
+  handleViewProfile,
 }: ChatSidebarProps) {
   return (
     <Sidebar collapsible="icon">
@@ -149,31 +146,28 @@ export function ChatSidebar({
         </Tabs>
       </SidebarContent>
       <SidebarFooter>
-        <div className="flex items-center justify-between p-2">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <Avatar className="h-8 w-8 shrink-0">
-              <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-              <AvatarFallback>{currentUser.name[0]}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col text-sm overflow-hidden">
-              <span className="font-semibold truncate">{currentUser.name}</span>
-              <span className="text-xs text-muted-foreground truncate" title={currentUser.bio}>
-                {currentUser.bio || "No bio"}
-              </span>
-            </div>
+        <div
+          className="flex cursor-pointer items-center gap-2 overflow-hidden p-2 rounded-md hover:bg-sidebar-accent"
+          onClick={() => handleViewProfile(currentUser)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) =>
+            (e.key === 'Enter' || e.key === ' ') && handleViewProfile(currentUser)
+          }
+        >
+          <Avatar className="h-8 w-8 shrink-0">
+            <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+            <AvatarFallback>{currentUser.name[0]}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col overflow-hidden text-sm">
+            <span className="font-semibold truncate">{currentUser.name}</span>
+            <span
+              className="truncate text-xs text-muted-foreground"
+              title={currentUser.bio}
+            >
+              {currentUser.bio || 'No bio'}
+            </span>
           </div>
-          <Dialog open={isUserSettingsOpen} onOpenChange={setIsUserSettingsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <UserSettingsDialog
-              currentUser={currentUser}
-              onUpdateUser={handleUpdateUser}
-              setOpen={setIsUserSettingsOpen}
-            />
-          </Dialog>
         </div>
       </SidebarFooter>
     </Sidebar>

@@ -25,6 +25,7 @@ import { ChatSidebar } from "@/components/chat/chat-sidebar";
 import { ChatArea } from "@/components/chat/chat-area";
 import { AuthGuard } from "@/components/auth-guard";
 import { useToast } from "@/hooks/use-toast";
+import { UserProfileDialog } from "@/components/user-profile-dialog";
 
 type RawChat = Omit<Chat, 'users'>;
 
@@ -38,12 +39,12 @@ export default function ChatPage() {
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = React.useState(false);
   const [isManageGroupOpen, setIsManageGroupOpen] = React.useState(false);
-  const [isUserSettingsOpen, setIsUserSettingsOpen] = React.useState(false);
   const [isGroupSettingsOpen, setIsGroupSettingsOpen] = React.useState(false);
   const [messageContent, setMessageContent] = React.useState("");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [previewFile, setPreviewFile] = React.useState<Message['file'] | null>(null);
+  const [viewedUser, setViewedUser] = React.useState<User | null>(null);
 
   // Listen for user updates
   React.useEffect(() => {
@@ -315,6 +316,10 @@ export default function ChatPage() {
     }
   };
 
+  const handleViewProfile = (user: User) => {
+    setViewedUser(user);
+  };
+
   const conversationHistory = messages.map(m => `${m.user.name}: ${m.content}`).join('\n');
 
   if (!currentUser) {
@@ -338,9 +343,8 @@ export default function ChatPage() {
             isCreateGroupOpen={isCreateGroupOpen}
             setIsCreateGroupOpen={setIsCreateGroupOpen}
             handleCreateGroup={handleCreateGroup}
-            isUserSettingsOpen={isUserSettingsOpen}
-            setIsUserSettingsOpen={setIsUserSettingsOpen}
             handleUpdateUser={handleUpdateUser}
+            handleViewProfile={handleViewProfile}
           />
           <ChatArea
             selectedChat={selectedChat}
@@ -365,8 +369,16 @@ export default function ChatPage() {
             fileInputRef={fileInputRef}
             conversationHistory={conversationHistory}
             handleStartChat={handleCreateDmChat}
+            handleViewProfile={handleViewProfile}
           />
           <FilePreviewDialog file={previewFile} onClose={() => setPreviewFile(null)} />
+          <UserProfileDialog
+            user={viewedUser}
+            currentUser={currentUser}
+            onUpdateUser={handleUpdateUser}
+            isOpen={!!viewedUser}
+            onOpenChange={(isOpen) => !isOpen && setViewedUser(null)}
+          />
         </div>
       </SidebarProvider>
     </AuthGuard>

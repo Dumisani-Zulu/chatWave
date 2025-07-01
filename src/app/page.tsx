@@ -10,7 +10,6 @@ import {
   where,
   onSnapshot,
   orderBy,
-  getDocs,
   doc,
   addDoc,
   updateDoc,
@@ -44,15 +43,14 @@ export default function ChatPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [previewFile, setPreviewFile] = React.useState<Message['file'] | null>(null);
 
-  // Fetch all users
+  // Listen for user updates
   React.useEffect(() => {
-    const fetchUsers = async () => {
-      const usersCollection = collection(db, "users");
-      const usersSnapshot = await getDocs(usersCollection);
-      const usersList = usersSnapshot.docs.map(doc => doc.data() as User);
+    const usersQuery = query(collection(db, "users"));
+    const unsubscribe = onSnapshot(usersQuery, (querySnapshot) => {
+      const usersList = querySnapshot.docs.map((doc) => doc.data() as User);
       setAllUsers(usersList);
-    };
-    fetchUsers();
+    });
+    return () => unsubscribe();
   }, []);
 
   // Listen for chat updates

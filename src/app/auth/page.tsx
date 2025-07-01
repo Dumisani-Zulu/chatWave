@@ -37,6 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/logo";
 import { Loader2 } from "lucide-react";
+import Image from "next/image";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -195,10 +196,9 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Tabs defaultValue="login" className="w-full max-w-md">
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-2">
           <div className="flex items-center gap-3 font-headline text-2xl font-bold">
-            <Logo className="h-8 w-8 text-primary" />
-            <span>ChatWave</span>
+            <Image src="/logo_1.png" alt="Logo" width={150} height={60} className="" />
           </div>
         </div>
         <TabsList className="grid w-full grid-cols-2">

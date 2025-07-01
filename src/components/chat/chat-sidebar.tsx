@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreateGroupDialog } from '@/components/create-group-dialog';
 import { Logo } from '@/components/logo';
 import type { Chat, User } from '@/lib/types';
+import Image from 'next/image';
 
 interface ChatSidebarProps {
   currentUser: User;
@@ -61,8 +62,12 @@ export function ChatSidebar({
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 font-headline text-lg font-bold">
-          <Logo className="h-6 w-6 text-primary" />
-          <span>ChatWave</span>
+          <Image
+            src="/logo_1.png"
+            alt="ChatWave Logo"
+            width={80}
+            height={50}
+          />
         </div>
       </SidebarHeader>
       <SidebarContent className="flex flex-col">

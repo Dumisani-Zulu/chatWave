@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 interface EmptyChatProps {
   currentUser: User;
@@ -26,7 +27,13 @@ export function EmptyChat({ currentUser, allUsers, onStartChat }: EmptyChatProps
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center p-4 md:p-6 h-full">
       <div className="flex flex-col items-center justify-center gap-4 text-center max-w-md w-full">
-        <MessageCircle className="h-16 w-16 text-muted-foreground" />
+        <Image
+          src="/logo_1.png"
+          alt="ChatWave Logo"
+          width={150}
+          height={60}
+          className=""
+        />
         <h3 className="font-headline text-2xl font-bold">
           Welcome to ChatWave
         </h3>

@@ -55,7 +55,7 @@ export default function ChatPage() {
 
   // Listen for chat updates
   React.useEffect(() => {
-    if (!currentUser?.id || allUsers.length === 0) return;
+    if (!currentUser?.id) return;
 
     const chatsQuery = query(
       collection(db, "chats"),

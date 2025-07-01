@@ -16,14 +16,17 @@ export interface Message {
     size: string;
     type: string;
   };
+  editedAt?: any;
 }
 
 export interface Chat {
   id: string;
   name: string;
   type: 'dm' | 'group';
-  users: User[];
-  messages: Message[];
+  users: User[]; // This is constructed on the client
+  userIds: string[]; // This comes from firestore
   avatar?: string;
   description?: string;
+  createdBy?: string;
+  createdAt?: any;
 }

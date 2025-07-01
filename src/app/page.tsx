@@ -186,6 +186,43 @@ export default function ChatPage() {
     }
   };
 
+  const handleCreateDmChat = async (otherUserId: string) => {
+    if (!currentUser) return;
+
+    const existingChat = chats.find(chat =>
+      chat.type === 'dm' &&
+      chat.userIds.length === 2 &&
+      chat.userIds.includes(currentUser.id) &&
+      chat.userIds.includes(otherUserId)
+    );
+
+    if (existingChat) {
+      handleSelectChat(existingChat);
+      return;
+    }
+
+    try {
+      const otherUser = allUsers.find(u => u.id === otherUserId);
+      if (!otherUser) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find user.' });
+        return;
+      }
+
+      await addDoc(collection(db, 'chats'), {
+        name: `${currentUser.name} & ${otherUser.name}`,
+        type: 'dm',
+        userIds: [currentUser.id, otherUserId],
+        createdAt: serverTimestamp(),
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: `Could not start chat: ${error.message}`,
+      });
+    }
+  };
+
   const handleUpdateGroupMembers = async (chatId: string, memberIds: string[]) => {
     const chatDocRef = doc(db, "chats", chatId);
     try {
@@ -314,6 +351,7 @@ export default function ChatPage() {
             handleUpdateMessage={handleUpdateMessage}
             fileInputRef={fileInputRef}
             conversationHistory={conversationHistory}
+            handleStartChat={handleCreateDmChat}
           />
           <FilePreviewDialog file={previewFile} onClose={() => setPreviewFile(null)} />
         </div>

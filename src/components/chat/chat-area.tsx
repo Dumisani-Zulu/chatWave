@@ -30,6 +30,7 @@ interface ChatAreaProps {
   handleUpdateMessage: (chatId: string, messageId: string, content: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   conversationHistory: string;
+  handleStartChat: (userId: string) => void;
 }
 
 export function ChatArea({
@@ -53,6 +54,7 @@ export function ChatArea({
   handleUpdateMessage,
   fileInputRef,
   conversationHistory,
+  handleStartChat,
 }: ChatAreaProps) {
   return (
     <SidebarInset className="flex flex-col bg-muted/30">
@@ -88,7 +90,11 @@ export function ChatArea({
           />
         </>
       ) : (
-        <EmptyChat />
+        <EmptyChat
+          currentUser={currentUser}
+          allUsers={allUsers}
+          onStartChat={handleStartChat}
+        />
       )}
     </SidebarInset>
   );

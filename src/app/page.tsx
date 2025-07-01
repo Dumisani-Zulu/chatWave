@@ -241,6 +241,24 @@ export default function ChatPage() {
     }
   };
 
+  const handleDeleteGroup = async (chatId: string) => {
+    if (!selectedChat || selectedChat.id !== chatId) return;
+    try {
+      await deleteDoc(doc(db, "chats", chatId));
+      setSelectedChat(null);
+      toast({
+        title: "Group Deleted",
+        description: "The group has been permanently deleted.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `Could not delete group: ${error.message}`,
+      });
+    }
+  };
+
   const handleUpdateUser = async (data: Partial<User>) => {
     if (!firebaseUser) return;
     try {
@@ -332,6 +350,7 @@ export default function ChatPage() {
             isGroupSettingsOpen={isGroupSettingsOpen}
             setIsGroupSettingsOpen={setIsGroupSettingsOpen}
             handleUpdateGroupDetails={handleUpdateGroupDetails}
+            handleDeleteGroup={handleDeleteGroup}
             setPreviewFile={setPreviewFile}
             messageContent={messageContent}
             setMessageContent={setMessageContent}

@@ -2,11 +2,29 @@
 "use client";
 
 import * as React from 'react';
-import { MoreVertical, Settings, Users } from 'lucide-react';
+import { MoreVertical, Settings, Users, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { GroupSettingsDialog } from "@/components/group-settings-dialog";
 import { ManageGroupDialog } from "@/components/manage-group-dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -23,6 +41,7 @@ interface ChatHeaderProps {
   isGroupSettingsOpen: boolean;
   setIsGroupSettingsOpen: (open: boolean) => void;
   handleUpdateGroupDetails: (chatId: string, details: { name: string; description?: string; avatar?: string }) => void;
+  handleDeleteGroup: (chatId: string) => void;
 }
 
 export function ChatHeader({
@@ -35,8 +54,11 @@ export function ChatHeader({
   isGroupSettingsOpen,
   setIsGroupSettingsOpen,
   handleUpdateGroupDetails,
+  handleDeleteGroup,
 }: ChatHeaderProps) {
   
+  const isGroupAdmin = selectedChat.type === 'group' && selectedChat.createdBy === currentUser.id;
+
   const otherUser = selectedChat.type === 'dm'
     ? selectedChat.users.find(u => u.id !== currentUser.id)
     : null;
@@ -77,43 +99,73 @@ export function ChatHeader({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <Dialog open={isManageGroupOpen} onOpenChange={setIsManageGroupOpen}>
-              <DialogTrigger asChild>
-                {selectedChat.type === 'group' && (
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Users className="mr-2 h-4 w-4" />
-                    <span>Manage Members</span>
-                  </DropdownMenuItem>
-                )}
-              </DialogTrigger>
-              <ManageGroupDialog
-                chat={selectedChat}
-                allUsers={allUsers}
-                currentUser={currentUser}
-                onUpdateGroup={handleUpdateGroupMembers}
-                setOpen={setIsManageGroupOpen}
-              />
-            </Dialog>
-            <Dialog open={isGroupSettingsOpen} onOpenChange={setIsGroupSettingsOpen}>
-              <DialogTrigger asChild>
-                {selectedChat.type === 'group' && (
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Group Settings</span>
-                  </DropdownMenuItem>
-                )}
-              </DialogTrigger>
-              <GroupSettingsDialog
-                chat={selectedChat}
-                onUpdateGroup={handleUpdateGroupDetails}
-                setOpen={setIsGroupSettingsOpen}
-              />
-            </Dialog>
             {selectedChat.type === 'dm' && (
               <DropdownMenuItem>
                 <Users className="mr-2 h-4 w-4" />
                 <span>View Profile</span>
               </DropdownMenuItem>
+            )}
+            
+            {isGroupAdmin && (
+              <>
+                <Dialog open={isManageGroupOpen} onOpenChange={setIsManageGroupOpen}>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Users className="mr-2 h-4 w-4" />
+                      <span>Manage Members</span>
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <ManageGroupDialog
+                    chat={selectedChat}
+                    allUsers={allUsers}
+                    currentUser={currentUser}
+                    onUpdateGroup={handleUpdateGroupMembers}
+                    setOpen={setIsManageGroupOpen}
+                  />
+                </Dialog>
+                <Dialog open={isGroupSettingsOpen} onOpenChange={setIsGroupSettingsOpen}>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Group Settings</span>
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <GroupSettingsDialog
+                    chat={selectedChat}
+                    onUpdateGroup={handleUpdateGroupDetails}
+                    setOpen={setIsGroupSettingsOpen}
+                  />
+                </Dialog>
+                <DropdownMenuSeparator />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem
+                      onSelect={(e) => e.preventDefault()}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Delete Group</span>
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure you want to delete this group?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete '{selectedChat.name}' and all its messages.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDeleteGroup(selectedChat.id)}
+                        className={cn(buttonVariants({ variant: "destructive" }))}
+                      >
+                        Delete Group
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

@@ -20,6 +20,7 @@ interface ChatAreaProps {
   isGroupSettingsOpen: boolean;
   setIsGroupSettingsOpen: (open: boolean) => void;
   handleUpdateGroupDetails: (chatId: string, details: { name: string; description?: string; avatar?: string }) => void;
+  handleDeleteGroup: (chatId: string) => void;
   setPreviewFile: (file: Message['file'] | null) => void;
   messageContent: string;
   setMessageContent: (value: string) => void;
@@ -44,6 +45,7 @@ export function ChatArea({
   isGroupSettingsOpen,
   setIsGroupSettingsOpen,
   handleUpdateGroupDetails,
+  handleDeleteGroup,
   setPreviewFile,
   messageContent,
   setMessageContent,
@@ -63,13 +65,14 @@ export function ChatArea({
           <ChatHeader
             selectedChat={selectedChat}
             currentUser={currentUser}
+            allUsers={allUsers}
             isManageGroupOpen={isManageGroupOpen}
             setIsManageGroupOpen={setIsManageGroupOpen}
             handleUpdateGroupMembers={handleUpdateGroupMembers}
             isGroupSettingsOpen={isGroupSettingsOpen}
             setIsGroupSettingsOpen={setIsGroupSettingsOpen}
             handleUpdateGroupDetails={handleUpdateGroupDetails}
-            allUsers={allUsers}
+            handleDeleteGroup={handleDeleteGroup}
           />
           <MessageList
             chatId={selectedChat.id}

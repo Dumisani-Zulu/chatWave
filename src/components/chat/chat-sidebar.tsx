@@ -36,7 +36,7 @@ interface ChatSidebarProps {
   handleCreateGroup: (name: string, memberIds: string[]) => void;
   isUserSettingsOpen: boolean;
   setIsUserSettingsOpen: (open: boolean) => void;
-  handleUpdateUser: (updatedUser: User) => void;
+  handleUpdateUser: (updatedUser: Partial<User>) => void;
 }
 
 export function ChatSidebar({

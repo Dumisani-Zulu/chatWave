@@ -27,7 +27,7 @@ import { AuthGuard } from "@/components/auth-guard";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ChatPage() {
-  const { user: currentUser, firebaseUser, updateUser } = useAuth();
+  const { user: currentUser, firebaseUser, updateUserProfile } = useAuth();
   const { toast } = useToast();
 
   const [allUsers, setAllUsers] = React.useState<User[]>([]);
@@ -241,25 +241,18 @@ export default function ChatPage() {
     }
   };
 
-  const handleUpdateUser = async (updatedUser: User) => {
+  const handleUpdateUser = async (data: Partial<User>) => {
     if (!firebaseUser) return;
     try {
       // Update Firebase Auth profile
       await updateProfile(firebaseUser, {
-        displayName: updatedUser.name,
-        photoURL: updatedUser.avatar,
+        displayName: data.name,
+        photoURL: data.avatar,
       });
 
-      // Update Firestore user document
-      const userDocRef = doc(db, "users", firebaseUser.uid);
-      await updateDoc(userDocRef, {
-        name: updatedUser.name,
-        avatar: updatedUser.avatar,
-        bio: updatedUser.bio,
-      });
+      // Update Firestore user document via the hook
+      await updateUserProfile(data);
       
-      updateUser(updatedUser);
-
       toast({
         title: 'Profile Updated',
         description: 'Your profile has been updated.',

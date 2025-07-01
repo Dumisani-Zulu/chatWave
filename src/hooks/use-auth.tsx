@@ -3,21 +3,22 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import type { User } from '@/lib/types';
 
 interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
-  updateUser: (newUser: User) => void;
+  updateUserProfile: (data: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   firebaseUser: null,
   loading: true,
-  updateUser: () => {},
+  updateUserProfile: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -26,29 +27,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
       setFirebaseUser(fbUser);
-      if (fbUser) {
-        setUser((currentUser) => ({
-            id: fbUser.uid,
-            name: fbUser.displayName || 'Anonymous User',
-            avatar: fbUser.photoURL || `https://placehold.co/100x100?text=${(fbUser.displayName || 'A').charAt(0)}`,
-            bio: currentUser?.bio || '', // Persist bio from local state across auth changes
-        }));
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
+      // Let the other useEffect handle loading state based on user doc presence
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
-  const updateUser = (newUser: User) => {
-    setUser(newUser);
+  useEffect(() => {
+    if (firebaseUser) {
+      setLoading(true);
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const unsubscribeSnapshot = onSnapshot(userDocRef, (doc) => {
+        if (doc.exists()) {
+          setUser(doc.data() as User);
+        } else {
+          // This can happen briefly during registration before the user doc is created.
+          // The AuthGuard will show a loader.
+          setUser(null); 
+        }
+        setLoading(false);
+      });
+      return () => unsubscribeSnapshot();
+    } else {
+      setUser(null);
+      setLoading(false);
+    }
+  }, [firebaseUser]);
+
+  const updateUserProfile = async (data: Partial<User>) => {
+    if (firebaseUser) {
+      const userDocRef = doc(db, "users", firebaseUser.uid);
+      await updateDoc(userDocRef, data);
+    }
   };
 
-  const value = { user, firebaseUser, loading, updateUser };
+  const value = { user, firebaseUser, loading, updateUserProfile };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

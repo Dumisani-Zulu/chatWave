@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -33,16 +34,18 @@ const userSettingsSchema = z.object({
   bio: z.string().max(160, 'Bio cannot be longer than 160 characters').optional(),
 });
 
+type UserSettingsValues = z.infer<typeof userSettingsSchema>;
+
 interface UserSettingsDialogProps {
   currentUser: User;
-  onUpdateUser: (updatedUser: User) => void;
+  onUpdateUser: (data: Partial<User>) => void;
   setOpen: (open: boolean) => void;
 }
 
 export function UserSettingsDialog({ currentUser, onUpdateUser, setOpen }: UserSettingsDialogProps) {
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof userSettingsSchema>>({
+  const form = useForm<UserSettingsValues>({
     resolver: zodResolver(userSettingsSchema),
     defaultValues: {
       name: currentUser.name,
@@ -51,17 +54,8 @@ export function UserSettingsDialog({ currentUser, onUpdateUser, setOpen }: UserS
     },
   });
 
-  function onSubmit(values: z.infer<typeof userSettingsSchema>) {
-    const updatedUser = {
-        ...currentUser,
-        ...values,
-        avatar: values.avatar || currentUser.avatar,
-    };
-    onUpdateUser(updatedUser);
-    toast({
-      title: 'Profile Updated',
-      description: 'Your profile information has been saved.',
-    });
+  function onSubmit(values: UserSettingsValues) {
+    onUpdateUser(values);
     setOpen(false);
   }
 

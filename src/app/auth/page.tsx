@@ -119,7 +119,7 @@ export default function AuthPage() {
         id: user.uid,
         name: values.name,
         email: user.email,
-        avatar: user.photoURL || `https://placehold.co/100x100?text=${(values.name).charAt(0)}`,
+        avatar: user.photoURL || `https://placehold.co/100x100?text=${(values.name).charAt(0).toUpperCase()}`,
         bio: "",
         createdAt: serverTimestamp(),
       });
@@ -143,17 +143,15 @@ export default function AuthPage() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Check if user already exists in Firestore
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        // Create a new user document if it doesn't exist
         await setDoc(userDocRef, {
           id: user.uid,
-          name: user.displayName,
+          name: user.displayName || "Google User",
           email: user.email,
-          avatar: user.photoURL,
+          avatar: user.photoURL || `https://placehold.co/100x100?text=${(user.email || 'G').charAt(0).toUpperCase()}`,
           bio: "",
           createdAt: serverTimestamp(),
         });

@@ -88,7 +88,28 @@ export default function AuthPage() {
   async function onLoginSubmit(values: z.infer<typeof loginSchema>) {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password
+      );
+      const user = userCredential.user;
+
+      // Ensure a user document exists in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          id: user.uid,
+          name: user.displayName || user.email?.split('@')[0] || "User",
+          email: user.email,
+          avatar: user.photoURL || `https://placehold.co/100x100?text=${(user.email || 'U').charAt(0).toUpperCase()}`,
+          bio: "",
+          createdAt: serverTimestamp(),
+        });
+      }
+
       router.push("/");
     } catch (error: any) {
       toast({

@@ -8,15 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Message } from '@/lib/types';
 
 export function MessageItem({ message, isCurrentUser, onPreviewFile }: { message: Message; isCurrentUser: boolean; onPreviewFile: (file: Message['file']) => void; }) {
-  React.useEffect(() => {
-    const fileUrl = message.file?.url;
-    if (fileUrl && fileUrl.startsWith('blob:')) {
-      return () => {
-        URL.revokeObjectURL(fileUrl);
-      };
-    }
-  }, [message.file?.url]);
-  
   return (
     <div
       className={cn(

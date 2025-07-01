@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -37,23 +36,41 @@ export default function ChatPage() {
     setSelectedChat(chat);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!selectedChat) return;
 
     const content = messageContent.trim();
-    if (!content && !selectedFile) return;
+    let fileData: Message['file'] | undefined = undefined;
+
+    if (selectedFile) {
+      try {
+        fileData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            resolve({
+              name: selectedFile.name,
+              url: event.target?.result as string,
+              size: `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`,
+              type: selectedFile.type,
+            });
+          };
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(selectedFile);
+        });
+      } catch (error) {
+        console.error("Error reading file:", error);
+        return;
+      }
+    }
+
+    if (!content && !fileData) return;
 
     const newMessage: Message = {
       id: `m${Date.now()}`,
       user: currentUser,
       content,
       timestamp: new Date().toISOString(),
-      file: selectedFile ? {
-          name: selectedFile.name,
-          url: URL.createObjectURL(selectedFile),
-          size: `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`,
-          type: selectedFile.type,
-      } : undefined,
+      file: fileData,
     };
 
     const newChats = chats.map((chat) =>

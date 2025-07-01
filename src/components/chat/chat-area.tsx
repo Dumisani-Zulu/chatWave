@@ -25,6 +25,8 @@ interface ChatAreaProps {
   selectedFile: File | null;
   setSelectedFile: (file: File | null) => void;
   handleSendMessage: () => void;
+  handleDeleteMessage: (chatId: string, messageId: string) => void;
+  handleUpdateMessage: (chatId: string, messageId: string, content: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   conversationHistory: string;
 }
@@ -45,6 +47,8 @@ export function ChatArea({
   selectedFile,
   setSelectedFile,
   handleSendMessage,
+  handleDeleteMessage,
+  handleUpdateMessage,
   fileInputRef,
   conversationHistory,
 }: ChatAreaProps) {
@@ -63,9 +67,12 @@ export function ChatArea({
             handleUpdateGroupDetails={handleUpdateGroupDetails}
           />
           <MessageList
+            chatId={selectedChat.id}
             messages={messages}
             currentUser={currentUser}
             onPreviewFile={setPreviewFile}
+            handleDeleteMessage={handleDeleteMessage}
+            handleUpdateMessage={handleUpdateMessage}
           />
           <MessageForm
             messageContent={messageContent}

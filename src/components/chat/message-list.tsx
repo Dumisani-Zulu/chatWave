@@ -7,12 +7,22 @@ import { MessageItem } from "@/components/chat/message-item";
 import type { Message, User } from '@/lib/types';
 
 interface MessageListProps {
+  chatId: string;
   messages: Message[];
   currentUser: User;
   onPreviewFile: (file: Message['file']) => void;
+  handleDeleteMessage: (chatId: string, messageId: string) => void;
+  handleUpdateMessage: (chatId: string, messageId: string, content: string) => void;
 }
 
-export function MessageList({ messages, currentUser, onPreviewFile }: MessageListProps) {
+export function MessageList({
+  chatId,
+  messages,
+  currentUser,
+  onPreviewFile,
+  handleDeleteMessage,
+  handleUpdateMessage,
+}: MessageListProps) {
   return (
     <main className="flex-1 overflow-hidden">
       <ScrollArea className="h-full p-4 md:p-6">
@@ -20,9 +30,12 @@ export function MessageList({ messages, currentUser, onPreviewFile }: MessageLis
           {messages.map((message) => (
             <MessageItem
               key={message.id}
+              chatId={chatId}
               message={message}
               isCurrentUser={message.user.id === currentUser.id}
               onPreviewFile={onPreviewFile}
+              handleDeleteMessage={handleDeleteMessage}
+              handleUpdateMessage={handleUpdateMessage}
             />
           ))}
         </div>

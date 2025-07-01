@@ -156,6 +156,48 @@ export default function ChatPage() {
     setChats(updatedChats);
   };
 
+  const handleDeleteMessage = (chatId: string, messageId: string) => {
+    const newChats = chats.map((chat) => {
+      if (chat.id === chatId) {
+        return {
+          ...chat,
+          messages: chat.messages.filter((m) => m.id !== messageId),
+        };
+      }
+      return chat;
+    });
+
+    setChats(newChats);
+    if (selectedChat?.id === chatId) {
+        const updatedChat = newChats.find((chat) => chat.id === chatId);
+        if (updatedChat) {
+            setSelectedChat(updatedChat);
+        }
+    }
+  };
+
+  const handleUpdateMessage = (chatId: string, messageId: string, content: string) => {
+    const newChats = chats.map((chat) => {
+      if (chat.id === chatId) {
+        return {
+          ...chat,
+          messages: chat.messages.map((m) =>
+            m.id === messageId ? { ...m, content, file: m.file } : m
+          ),
+        };
+      }
+      return chat;
+    });
+
+    setChats(newChats);
+    if (selectedChat?.id === chatId) {
+        const updatedChat = newChats.find((chat) => chat.id === chatId);
+        if (updatedChat) {
+            setSelectedChat(updatedChat);
+        }
+    }
+  };
+
 
   const conversationHistory = messages.map(m => `${m.user.name}: ${m.content}`).join('\n');
 
@@ -190,6 +232,8 @@ export default function ChatPage() {
           selectedFile={selectedFile}
           setSelectedFile={setSelectedFile}
           handleSendMessage={handleSendMessage}
+          handleDeleteMessage={handleDeleteMessage}
+          handleUpdateMessage={handleUpdateMessage}
           fileInputRef={fileInputRef}
           conversationHistory={conversationHistory}
         />

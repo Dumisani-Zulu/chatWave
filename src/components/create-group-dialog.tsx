@@ -27,6 +27,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User } from '@/lib/types';
+import { Separator } from '@/components/ui/separator';
 
 const createGroupSchema = z.object({
   name: z.string().min(3, 'Group name must be at least 3 characters'),
@@ -62,7 +63,7 @@ export function CreateGroupDialog({ currentUser, allUsers, onCreateGroup, setOpe
       <DialogHeader>
         <DialogTitle>Create New Group</DialogTitle>
         <DialogDescription>
-          Select members to start a new group chat. You will be added automatically.
+          You are automatically included. Select other members to add to the group.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -88,6 +89,23 @@ export function CreateGroupDialog({ currentUser, allUsers, onCreateGroup, setOpe
                 <FormLabel>Members</FormLabel>
                 <ScrollArea className="h-40 rounded-md border">
                   <div className="p-4 space-y-2">
+                    <div className="flex flex-row items-center space-x-3 space-y-0 opacity-75">
+                        <Checkbox
+                            id="current-user"
+                            checked={true}
+                            disabled={true}
+                        />
+                        <FormLabel htmlFor='current-user' className="font-normal w-full cursor-not-allowed">
+                            <div className="flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+                                <AvatarFallback>{currentUser.name[0]}</AvatarFallback>
+                                </Avatar>
+                                <span>{currentUser.name} (You)</span>
+                            </div>
+                        </FormLabel>
+                    </div>
+                    <Separator className="my-2" />
                     {otherUsers.map((user) => (
                       <FormField
                         key={user.id}

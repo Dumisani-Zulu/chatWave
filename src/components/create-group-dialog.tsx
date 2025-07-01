@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -31,7 +30,7 @@ import { Separator } from '@/components/ui/separator';
 
 const createGroupSchema = z.object({
   name: z.string().min(3, 'Group name must be at least 3 characters'),
-  members: z.array(z.string()).min(1, 'You must select at least one other member'),
+  members: z.array(z.string()),
 });
 
 interface CreateGroupDialogProps {

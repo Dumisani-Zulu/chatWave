@@ -49,6 +49,14 @@ export function ChatSidebar({
   handleUpdateUser,
   handleViewProfile,
 }: ChatSidebarProps) {
+  const sortedChats = React.useMemo(() => {
+    return [...chats].sort((a, b) => {
+      const dateA = a.lastMessageAt?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
+      const dateB = b.lastMessageAt?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [chats]);
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -76,7 +84,7 @@ export function ChatSidebar({
               <SidebarMenu>
                 <SidebarGroup>
                   <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
-                  {chats
+                  {sortedChats
                     .filter((c) => c.type === "dm")
                     .map((chat) => {
                       const otherUser = chat.users.find(
@@ -121,7 +129,7 @@ export function ChatSidebar({
                       />
                     </Dialog>
                   </SidebarGroupLabel>
-                  {chats
+                  {sortedChats
                     .filter((c) => c.type === "group")
                     .map((chat) => (
                       <SidebarMenuItem key={chat.id}>

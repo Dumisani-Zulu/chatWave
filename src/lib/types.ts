@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -29,4 +30,5 @@ export interface Chat {
   description?: string;
   createdBy?: string;
   createdAt?: any;
+  lastMessageAt?: any;
 }

@@ -159,6 +159,10 @@ export default function ChatPage() {
     }
 
     await addDoc(collection(db, `chats/${selectedChat.id}/messages`), messagePayload);
+
+    await updateDoc(doc(db, "chats", selectedChat.id), {
+        lastMessageAt: serverTimestamp(),
+    });
     
     setMessageContent("");
     setSelectedFile(null);
@@ -178,6 +182,7 @@ export default function ChatPage() {
             type: "group",
             userIds: allMemberIds,
             createdAt: serverTimestamp(),
+            lastMessageAt: serverTimestamp(),
             createdBy: currentUser.id,
             avatar: `https://placehold.co/100x100/A9A9A9/FFF?text=${name.substring(0,2).toUpperCase()}`,
             description: "A new group chat.",
@@ -215,6 +220,7 @@ export default function ChatPage() {
         type: 'dm',
         userIds: [currentUser.id, otherUserId],
         createdAt: serverTimestamp(),
+        lastMessageAt: serverTimestamp(),
       });
     } catch (error: any) {
       toast({

@@ -66,10 +66,15 @@ export default function ChatPage() {
     );
 
     const unsubscribe = onSnapshot(chatsQuery, (querySnapshot) => {
-      const chatsData = querySnapshot.docs.map((doc) => ({
+      const chatsData = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
           id: doc.id,
-          ...doc.data(),
-        }) as RawChat);
+          ...data,
+          createdAt: (data.createdAt as Timestamp)?.toDate().toISOString(),
+          lastMessageAt: (data.lastMessageAt as Timestamp)?.toDate().toISOString(),
+        } as RawChat
+      });
       setRawChats(chatsData);
     });
 

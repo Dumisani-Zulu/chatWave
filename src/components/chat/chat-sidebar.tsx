@@ -51,8 +51,8 @@ export function ChatSidebar({
 }: ChatSidebarProps) {
   const sortedChats = React.useMemo(() => {
     return [...chats].sort((a, b) => {
-      const dateA = a.lastMessageAt?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
-      const dateB = b.lastMessageAt?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
+      const dateA = new Date(a.lastMessageAt || a.createdAt || 0);
+      const dateB = new Date(b.lastMessageAt || b.createdAt || 0);
       return dateB.getTime() - dateA.getTime();
     });
   }, [chats]);

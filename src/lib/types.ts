@@ -29,6 +29,6 @@ export interface Chat {
   avatar?: string;
   description?: string;
   createdBy?: string;
-  createdAt?: any;
-  lastMessageAt?: any;
+  createdAt?: string;
+  lastMessageAt?: string;
 }

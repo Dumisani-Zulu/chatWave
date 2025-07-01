@@ -1,14 +1,21 @@
+
 "use client";
 
 import * as React from "react";
+import { updateProfile } from "firebase/auth";
+import { useAuth } from "@/hooks/use-auth";
 import { mockUsers, mockChats, Chat, User, Message } from "@/lib/data";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { FilePreviewDialog } from "@/components/file-preview-dialog";
 import { ChatSidebar } from "@/components/chat/chat-sidebar";
 import { ChatArea } from "@/components/chat/chat-area";
+import { AuthGuard } from "@/components/auth-guard";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ChatPage() {
-  const [currentUser, setCurrentUser] = React.useState<User>(mockUsers[0]);
+  const { user: currentUser, firebaseUser, updateUser } = useAuth();
+  const { toast } = useToast();
+
   const [chats, setChats] = React.useState<Chat[]>(mockChats);
   const [selectedChat, setSelectedChat] = React.useState<Chat | null>(chats[0]);
   const [messages, setMessages] = React.useState<Message[]>(
@@ -37,7 +44,7 @@ export default function ChatPage() {
   };
 
   const handleSendMessage = async () => {
-    if (!selectedChat) return;
+    if (!selectedChat || !currentUser) return;
 
     const content = messageContent.trim();
     let fileData: Message['file'] | undefined = undefined;
@@ -93,11 +100,18 @@ export default function ChatPage() {
   };
 
   const handleCreateGroup = (name: string, memberIds: string[]) => {
+    if (!currentUser) return;
+
+    const groupMembers = mockUsers.filter(u => memberIds.includes(u.id));
+    if (!groupMembers.find(u => u.id === currentUser.id)) {
+        groupMembers.push(currentUser);
+    }
+
     const newGroup: Chat = {
       id: `c${Date.now()}`,
       name,
       type: "group",
-      users: mockUsers.filter((u) => memberIds.includes(u.id)),
+      users: groupMembers,
       messages: [],
       avatar: `https://placehold.co/100x100/A9A9A9/FFF?text=${name.substring(0,2).toUpperCase()}`,
       description: "A new group chat.",
@@ -137,23 +151,28 @@ export default function ChatPage() {
     setIsGroupSettingsOpen(false);
   };
 
-  const handleUpdateUser = (updatedUser: User) => {
-    setCurrentUser(updatedUser);
-    
-    const userIndex = mockUsers.findIndex(u => u.id === updatedUser.id);
-    if (userIndex !== -1) {
-        mockUsers[userIndex] = updatedUser;
-    }
+  const handleUpdateUser = async (updatedUser: User) => {
+    if (!firebaseUser) return;
+    try {
+      await updateProfile(firebaseUser, {
+        displayName: updatedUser.name,
+        photoURL: updatedUser.avatar,
+      });
 
-    const updatedChats = chats.map(chat => ({
-        ...chat,
-        users: chat.users.map(user => user.id === updatedUser.id ? updatedUser : user),
-        messages: chat.messages.map(message => ({
-            ...message,
-            user: message.user.id === updatedUser.id ? updatedUser : message.user,
-        })),
-    }));
-    setChats(updatedChats);
+      updateUser(updatedUser);
+
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been updated.',
+      });
+
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: 'Update Failed',
+        description: error.message,
+      });
+    }
   };
 
   const handleDeleteMessage = (chatId: string, messageId: string) => {
@@ -198,47 +217,56 @@ export default function ChatPage() {
     }
   };
 
-
   const conversationHistory = messages.map(m => `${m.user.name}: ${m.content}`).join('\n');
 
+  if (!currentUser) {
+    return (
+      <AuthGuard>
+        <div />
+      </AuthGuard>
+    );
+  }
+
   return (
-    <SidebarProvider>
-      <div className="flex h-screen w-full bg-background">
-        <ChatSidebar
-          currentUser={currentUser}
-          chats={chats}
-          selectedChat={selectedChat}
-          handleSelectChat={handleSelectChat}
-          isCreateGroupOpen={isCreateGroupOpen}
-          setIsCreateGroupOpen={setIsCreateGroupOpen}
-          handleCreateGroup={handleCreateGroup}
-          isUserSettingsOpen={isUserSettingsOpen}
-          setIsUserSettingsOpen={setIsUserSettingsOpen}
-          handleUpdateUser={handleUpdateUser}
-        />
-        <ChatArea
-          selectedChat={selectedChat}
-          currentUser={currentUser}
-          messages={messages}
-          isManageGroupOpen={isManageGroupOpen}
-          setIsManageGroupOpen={setIsManageGroupOpen}
-          handleUpdateGroupMembers={handleUpdateGroupMembers}
-          isGroupSettingsOpen={isGroupSettingsOpen}
-          setIsGroupSettingsOpen={setIsGroupSettingsOpen}
-          handleUpdateGroupDetails={handleUpdateGroupDetails}
-          setPreviewFile={setPreviewFile}
-          messageContent={messageContent}
-          setMessageContent={setMessageContent}
-          selectedFile={selectedFile}
-          setSelectedFile={setSelectedFile}
-          handleSendMessage={handleSendMessage}
-          handleDeleteMessage={handleDeleteMessage}
-          handleUpdateMessage={handleUpdateMessage}
-          fileInputRef={fileInputRef}
-          conversationHistory={conversationHistory}
-        />
-        <FilePreviewDialog file={previewFile} onClose={() => setPreviewFile(null)} />
-      </div>
-    </SidebarProvider>
+    <AuthGuard>
+      <SidebarProvider>
+        <div className="flex h-screen w-full bg-background">
+          <ChatSidebar
+            currentUser={currentUser}
+            chats={chats}
+            selectedChat={selectedChat}
+            handleSelectChat={handleSelectChat}
+            isCreateGroupOpen={isCreateGroupOpen}
+            setIsCreateGroupOpen={setIsCreateGroupOpen}
+            handleCreateGroup={handleCreateGroup}
+            isUserSettingsOpen={isUserSettingsOpen}
+            setIsUserSettingsOpen={setIsUserSettingsOpen}
+            handleUpdateUser={handleUpdateUser}
+          />
+          <ChatArea
+            selectedChat={selectedChat}
+            currentUser={currentUser}
+            messages={messages}
+            isManageGroupOpen={isManageGroupOpen}
+            setIsManageGroupOpen={setIsManageGroupOpen}
+            handleUpdateGroupMembers={handleUpdateGroupMembers}
+            isGroupSettingsOpen={isGroupSettingsOpen}
+            setIsGroupSettingsOpen={setIsGroupSettingsOpen}
+            handleUpdateGroupDetails={handleUpdateGroupDetails}
+            setPreviewFile={setPreviewFile}
+            messageContent={messageContent}
+            setMessageContent={setMessageContent}
+            selectedFile={selectedFile}
+            setSelectedFile={setSelectedFile}
+            handleSendMessage={handleSendMessage}
+            handleDeleteMessage={handleDeleteMessage}
+            handleUpdateMessage={handleUpdateMessage}
+            fileInputRef={fileInputRef}
+            conversationHistory={conversationHistory}
+          />
+          <FilePreviewDialog file={previewFile} onClose={() => setPreviewFile(null)} />
+        </div>
+      </SidebarProvider>
+    </AuthGuard>
   );
 }

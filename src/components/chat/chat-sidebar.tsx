@@ -28,6 +28,7 @@ import type { Chat, User } from '@/lib/types';
 interface ChatSidebarProps {
   currentUser: User;
   chats: Chat[];
+  allUsers: User[];
   selectedChat: Chat | null;
   handleSelectChat: (chat: Chat) => void;
   isCreateGroupOpen: boolean;
@@ -41,6 +42,7 @@ interface ChatSidebarProps {
 export function ChatSidebar({
   currentUser,
   chats,
+  allUsers,
   selectedChat,
   handleSelectChat,
   isCreateGroupOpen,
@@ -93,7 +95,7 @@ export function ChatSidebar({
                           >
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={otherUser?.avatar} alt={otherUser?.name} />
-                              <AvatarFallback>{otherUser?.name[0]}</AvatarFallback>
+                              <AvatarFallback>{otherUser?.name?.[0]}</AvatarFallback>
                             </Avatar>
                             <span className="truncate">{otherUser?.name}</span>
                           </SidebarMenuButton>
@@ -116,6 +118,7 @@ export function ChatSidebar({
                       </DialogTrigger>
                       <CreateGroupDialog
                         currentUser={currentUser}
+                        allUsers={allUsers}
                         onCreateGroup={handleCreateGroup}
                         setOpen={setIsCreateGroupOpen}
                       />

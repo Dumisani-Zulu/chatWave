@@ -26,7 +26,6 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { mockUsers } from '@/lib/data';
 import type { User } from '@/lib/types';
 
 const createGroupSchema = z.object({
@@ -36,12 +35,13 @@ const createGroupSchema = z.object({
 
 interface CreateGroupDialogProps {
   currentUser: User;
+  allUsers: User[];
   onCreateGroup: (name: string, memberIds: string[]) => void;
   setOpen: (open: boolean) => void;
 }
 
-export function CreateGroupDialog({ currentUser, onCreateGroup, setOpen }: CreateGroupDialogProps) {
-  const otherUsers = mockUsers.filter((user) => user.id !== currentUser.id);
+export function CreateGroupDialog({ currentUser, allUsers, onCreateGroup, setOpen }: CreateGroupDialogProps) {
+  const otherUsers = allUsers.filter((user) => user.id !== currentUser.id);
 
   const form = useForm<z.infer<typeof createGroupSchema>>({
     resolver: zodResolver(createGroupSchema),
@@ -52,8 +52,7 @@ export function CreateGroupDialog({ currentUser, onCreateGroup, setOpen }: Creat
   });
 
   function onSubmit(values: z.infer<typeof createGroupSchema>) {
-    const allMemberIds = [currentUser.id, ...values.members];
-    onCreateGroup(values.name, allMemberIds);
+    onCreateGroup(values.name, values.members);
     form.reset();
     setOpen(false);
   }

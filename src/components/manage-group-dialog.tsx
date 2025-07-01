@@ -24,7 +24,6 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { mockUsers } from '@/lib/data';
 import type { Chat, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -34,14 +33,15 @@ const manageGroupSchema = z.object({
 
 interface ManageGroupDialogProps {
   chat: Chat;
+  allUsers: User[];
   currentUser: User;
   onUpdateGroup: (chatId: string, memberIds: string[]) => void;
   setOpen: (open: boolean) => void;
 }
 
-export function ManageGroupDialog({ chat, currentUser, onUpdateGroup, setOpen }: ManageGroupDialogProps) {
+export function ManageGroupDialog({ chat, allUsers, currentUser, onUpdateGroup, setOpen }: ManageGroupDialogProps) {
   const { toast } = useToast();
-  const otherUsers = mockUsers.filter((user) => user.id !== currentUser.id);
+  const otherUsers = allUsers.filter((user) => user.id !== currentUser.id);
   const currentMemberIds = chat.users.map(u => u.id);
 
   const form = useForm<z.infer<typeof manageGroupSchema>>({

@@ -12,6 +12,7 @@ import type { Chat, Message, User } from '@/lib/types';
 interface ChatAreaProps {
   selectedChat: Chat | null;
   currentUser: User;
+  allUsers: User[];
   messages: Message[];
   isManageGroupOpen: boolean;
   setIsManageGroupOpen: (open: boolean) => void;
@@ -34,6 +35,7 @@ interface ChatAreaProps {
 export function ChatArea({
   selectedChat,
   currentUser,
+  allUsers,
   messages,
   isManageGroupOpen,
   setIsManageGroupOpen,
@@ -65,6 +67,7 @@ export function ChatArea({
             isGroupSettingsOpen={isGroupSettingsOpen}
             setIsGroupSettingsOpen={setIsGroupSettingsOpen}
             handleUpdateGroupDetails={handleUpdateGroupDetails}
+            allUsers={allUsers}
           />
           <MessageList
             chatId={selectedChat.id}

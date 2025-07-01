@@ -13,7 +13,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
@@ -108,9 +109,21 @@ export default function AuthPage() {
         values.email,
         values.password
       );
-      await updateProfile(userCredential.user, {
+      
+      const user = userCredential.user;
+      await updateProfile(user, {
         displayName: values.name,
       });
+
+      await setDoc(doc(db, "users", user.uid), {
+        id: user.uid,
+        name: values.name,
+        email: user.email,
+        avatar: user.photoURL || `https://placehold.co/100x100?text=${(values.name).charAt(0)}`,
+        bio: "",
+        createdAt: serverTimestamp(),
+      });
+
       router.push("/");
     } catch (error: any) {
       toast({
@@ -127,7 +140,25 @@ export default function AuthPage() {
     setIsLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Check if user already exists in Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        // Create a new user document if it doesn't exist
+        await setDoc(userDocRef, {
+          id: user.uid,
+          name: user.displayName,
+          email: user.email,
+          avatar: user.photoURL,
+          bio: "",
+          createdAt: serverTimestamp(),
+        });
+      }
+
       router.push("/");
     } catch (error: any) {
       toast({

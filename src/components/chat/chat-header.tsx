@@ -16,6 +16,7 @@ import type { Chat, User } from '@/lib/types';
 interface ChatHeaderProps {
   selectedChat: Chat;
   currentUser: User;
+  allUsers: User[];
   isManageGroupOpen: boolean;
   setIsManageGroupOpen: (open: boolean) => void;
   handleUpdateGroupMembers: (chatId: string, memberIds: string[]) => void;
@@ -27,6 +28,7 @@ interface ChatHeaderProps {
 export function ChatHeader({
   selectedChat,
   currentUser,
+  allUsers,
   isManageGroupOpen,
   setIsManageGroupOpen,
   handleUpdateGroupMembers,
@@ -34,34 +36,35 @@ export function ChatHeader({
   setIsGroupSettingsOpen,
   handleUpdateGroupDetails,
 }: ChatHeaderProps) {
+  
+  const otherUser = selectedChat.type === 'dm'
+    ? selectedChat.users.find(u => u.id !== currentUser.id)
+    : null;
+
+  const chatName = otherUser ? otherUser.name : selectedChat.name;
+  const chatAvatar = otherUser ? otherUser.avatar : selectedChat.avatar;
+  const chatDescription = otherUser
+    ? otherUser.bio || 'Online'
+    : selectedChat.description || `${selectedChat.users.length} members`;
+
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background px-4">
       <div className="flex items-center gap-3 overflow-hidden">
         <SidebarTrigger className="md:hidden" />
         <Avatar className="h-8 w-8 shrink-0">
           <AvatarImage
-            src={selectedChat.type === 'dm' ? selectedChat.users.find(u => u.id !== currentUser.id)?.avatar : selectedChat.avatar}
-            alt={selectedChat.name} />
+            src={chatAvatar}
+            alt={chatName} />
           <AvatarFallback>
-            {selectedChat.type === "dm"
-              ? selectedChat.users.find(
-                (u) => u.id !== currentUser.id
-              )?.name[0]
-              : selectedChat.name[0]}
+            {chatName?.[0]}
           </AvatarFallback>
         </Avatar>
         <div className="overflow-hidden">
           <h2 className="font-semibold font-headline truncate">
-            {selectedChat.type === "dm"
-              ? selectedChat.users.find(
-                (u) => u.id !== currentUser.id
-              )?.name
-              : selectedChat.name}
+            {chatName}
           </h2>
           <p className="text-xs text-muted-foreground truncate">
-            {selectedChat.type === 'group'
-              ? (selectedChat.description || `${selectedChat.users.length} members`)
-              : (selectedChat.users.find(u => u.id !== currentUser.id)?.bio || 'Online')}
+            {chatDescription}
           </p>
         </div>
       </div>
@@ -85,6 +88,7 @@ export function ChatHeader({
               </DialogTrigger>
               <ManageGroupDialog
                 chat={selectedChat}
+                allUsers={allUsers}
                 currentUser={currentUser}
                 onUpdateGroup={handleUpdateGroupMembers}
                 setOpen={setIsManageGroupOpen}

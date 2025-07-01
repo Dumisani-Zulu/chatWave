@@ -3,8 +3,23 @@
 
 import * as React from "react";
 import { updateProfile } from "firebase/auth";
+import { db, auth } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+  getDocs,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore";
 import { useAuth } from "@/hooks/use-auth";
-import { mockUsers, mockChats, Chat, User, Message } from "@/lib/data";
+import type { Chat, User, Message } from "@/lib/types";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { FilePreviewDialog } from "@/components/file-preview-dialog";
 import { ChatSidebar } from "@/components/chat/chat-sidebar";
@@ -16,11 +31,10 @@ export default function ChatPage() {
   const { user: currentUser, firebaseUser, updateUser } = useAuth();
   const { toast } = useToast();
 
-  const [chats, setChats] = React.useState<Chat[]>(mockChats);
-  const [selectedChat, setSelectedChat] = React.useState<Chat | null>(chats[0]);
-  const [messages, setMessages] = React.useState<Message[]>(
-    selectedChat?.messages || []
-  );
+  const [allUsers, setAllUsers] = React.useState<User[]>([]);
+  const [chats, setChats] = React.useState<Chat[]>([]);
+  const [selectedChat, setSelectedChat] = React.useState<Chat | null>(null);
+  const [messages, setMessages] = React.useState<Message[]>([]);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = React.useState(false);
   const [isManageGroupOpen, setIsManageGroupOpen] = React.useState(false);
   const [isUserSettingsOpen, setIsUserSettingsOpen] = React.useState(false);
@@ -30,14 +44,73 @@ export default function ChatPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [previewFile, setPreviewFile] = React.useState<Message['file'] | null>(null);
 
-
+  // Fetch all users
   React.useEffect(() => {
-    if (selectedChat) {
-      setMessages(selectedChat.messages);
-    } else {
-      setMessages([]);
+    const fetchUsers = async () => {
+      const usersCollection = collection(db, "users");
+      const usersSnapshot = await getDocs(usersCollection);
+      const usersList = usersSnapshot.docs.map(doc => doc.data() as User);
+      setAllUsers(usersList);
+    };
+    fetchUsers();
+  }, []);
+
+  // Listen for chat updates
+  React.useEffect(() => {
+    if (!currentUser?.id || allUsers.length === 0) return;
+
+    const chatsQuery = query(
+      collection(db, "chats"),
+      where("userIds", "array-contains", currentUser.id)
+    );
+
+    const unsubscribe = onSnapshot(chatsQuery, (querySnapshot) => {
+      const chatsData = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const chatUsers = data.userIds
+          ? data.userIds.map((id: string) => allUsers.find(u => u.id === id)).filter(Boolean)
+          : [];
+
+        return {
+          id: doc.id,
+          ...data,
+          users: chatUsers,
+        } as Chat;
+      });
+      setChats(chatsData);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser?.id, allUsers]);
+
+  // Listen for message updates in the selected chat
+  React.useEffect(() => {
+    if (!selectedChat?.id || allUsers.length === 0) {
+        setMessages([]);
+        return;
     }
-  }, [selectedChat]);
+
+    const messagesQuery = query(
+      collection(db, `chats/${selectedChat.id}/messages`),
+      orderBy("timestamp", "asc")
+    );
+
+    const unsubscribe = onSnapshot(messagesQuery, (querySnapshot) => {
+      const messagesData = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const user = allUsers.find(u => u.id === data.userId);
+        return {
+          id: doc.id,
+          ...data,
+          user: user || { id: 'unknown', name: 'Unknown User', avatar: '' }, // Fallback for unknown user
+          timestamp: (data.timestamp as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+        } as Message;
+      });
+      setMessages(messagesData);
+    });
+
+    return () => unsubscribe();
+  }, [selectedChat?.id, allUsers]);
 
   const handleSelectChat = (chat: Chat) => {
     setSelectedChat(chat);
@@ -50,47 +123,40 @@ export default function ChatPage() {
     let fileData: Message['file'] | undefined = undefined;
 
     if (selectedFile) {
-      try {
-        fileData = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            resolve({
-              name: selectedFile.name,
-              url: event.target?.result as string,
-              size: `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`,
-              type: selectedFile.type,
+        try {
+            fileData = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                resolve({
+                  name: selectedFile.name,
+                  url: event.target?.result as string,
+                  size: `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`,
+                  type: selectedFile.type,
+                });
+              };
+              reader.onerror = (error) => reject(error);
+              reader.readAsDataURL(selectedFile);
             });
-          };
-          reader.onerror = (error) => reject(error);
-          reader.readAsDataURL(selectedFile);
-        });
-      } catch (error) {
-        console.error("Error reading file:", error);
-        return;
-      }
+        } catch (error) {
+            console.error("Error reading file:", error);
+            toast({ variant: 'destructive', title: 'File Error', description: 'Could not read file.'});
+            return;
+        }
     }
 
     if (!content && !fileData) return;
 
-    const newMessage: Message = {
-      id: `m${Date.now()}`,
-      user: currentUser,
+    const messagePayload: any = {
+      userId: currentUser.id,
       content,
-      timestamp: new Date().toISOString(),
-      file: fileData,
+      timestamp: serverTimestamp(),
     };
 
-    const newChats = chats.map((chat) =>
-      chat.id === selectedChat.id
-        ? { ...chat, messages: [...chat.messages, newMessage] }
-        : chat
-    );
-
-    setChats(newChats);
-    const updatedChat = newChats.find((chat) => chat.id === selectedChat.id);
-    if (updatedChat) {
-      setSelectedChat(updatedChat);
+    if (fileData) {
+        messagePayload.file = fileData;
     }
+
+    await addDoc(collection(db, `chats/${selectedChat.id}/messages`), messagePayload);
     
     setMessageContent("");
     setSelectedFile(null);
@@ -99,66 +165,64 @@ export default function ChatPage() {
     }
   };
 
-  const handleCreateGroup = (name: string, memberIds: string[]) => {
+  const handleCreateGroup = async (name: string, memberIds: string[]) => {
     if (!currentUser) return;
+    
+    const allMemberIds = Array.from(new Set([currentUser.id, ...memberIds]));
 
-    const groupMembers = mockUsers.filter(u => memberIds.includes(u.id));
-    if (!groupMembers.find(u => u.id === currentUser.id)) {
-        groupMembers.push(currentUser);
+    try {
+        await addDoc(collection(db, "chats"), {
+            name,
+            type: "group",
+            userIds: allMemberIds,
+            createdAt: serverTimestamp(),
+            createdBy: currentUser.id,
+            avatar: `https://placehold.co/100x100/A9A9A9/FFF?text=${name.substring(0,2).toUpperCase()}`,
+            description: "A new group chat.",
+        });
+        setIsCreateGroupOpen(false);
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Error", description: `Could not create group: ${error.message}` });
     }
-
-    const newGroup: Chat = {
-      id: `c${Date.now()}`,
-      name,
-      type: "group",
-      users: groupMembers,
-      messages: [],
-      avatar: `https://placehold.co/100x100/A9A9A9/FFF?text=${name.substring(0,2).toUpperCase()}`,
-      description: "A new group chat.",
-    };
-    const newChats = [newGroup, ...chats];
-    setChats(newChats);
-    setSelectedChat(newGroup);
-    setIsCreateGroupOpen(false);
   };
 
-  const handleUpdateGroupMembers = (chatId: string, memberIds: string[]) => {
-    const updatedChats = chats.map((chat) => {
-      if (chat.id === chatId) {
-        return {
-          ...chat,
-          users: mockUsers.filter((u) => memberIds.includes(u.id)),
-        };
-      }
-      return chat;
-    });
-    setChats(updatedChats);
-    const updatedSelectedChat = updatedChats.find((chat) => chat.id === selectedChat?.id);
-    if (updatedSelectedChat) {
-      setSelectedChat(updatedSelectedChat);
+  const handleUpdateGroupMembers = async (chatId: string, memberIds: string[]) => {
+    const chatDocRef = doc(db, "chats", chatId);
+    try {
+        await updateDoc(chatDocRef, { userIds: memberIds });
+        setIsManageGroupOpen(false);
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Error", description: `Could not update members: ${error.message}` });
     }
-    setIsManageGroupOpen(false);
   };
   
-  const handleUpdateGroupDetails = (chatId: string, details: { name: string; description?: string; avatar?: string }) => {
-    const updatedChats = chats.map((chat) => 
-      chat.id === chatId ? { ...chat, ...details } : chat
-    );
-    setChats(updatedChats);
-    if (selectedChat?.id === chatId) {
-        setSelectedChat(prev => prev ? { ...prev, ...details } : null);
+  const handleUpdateGroupDetails = async (chatId: string, details: { name: string; description?: string; avatar?: string }) => {
+    const chatDocRef = doc(db, "chats", chatId);
+    try {
+        await updateDoc(chatDocRef, details);
+        setIsGroupSettingsOpen(false);
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Error", description: `Could not update group: ${error.message}` });
     }
-    setIsGroupSettingsOpen(false);
   };
 
   const handleUpdateUser = async (updatedUser: User) => {
     if (!firebaseUser) return;
     try {
+      // Update Firebase Auth profile
       await updateProfile(firebaseUser, {
         displayName: updatedUser.name,
         photoURL: updatedUser.avatar,
       });
 
+      // Update Firestore user document
+      const userDocRef = doc(db, "users", firebaseUser.uid);
+      await updateDoc(userDocRef, {
+        name: updatedUser.name,
+        avatar: updatedUser.avatar,
+        bio: updatedUser.bio,
+      });
+      
       updateUser(updatedUser);
 
       toast({
@@ -175,45 +239,30 @@ export default function ChatPage() {
     }
   };
 
-  const handleDeleteMessage = (chatId: string, messageId: string) => {
-    const newChats = chats.map((chat) => {
-      if (chat.id === chatId) {
-        return {
-          ...chat,
-          messages: chat.messages.filter((m) => m.id !== messageId),
-        };
-      }
-      return chat;
-    });
-
-    setChats(newChats);
-    if (selectedChat?.id === chatId) {
-        const updatedChat = newChats.find((chat) => chat.id === chatId);
-        if (updatedChat) {
-            setSelectedChat(updatedChat);
-        }
+  const handleDeleteMessage = async (chatId: string, messageId: string) => {
+    try {
+      await deleteDoc(doc(db, `chats/${chatId}/messages`, messageId));
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: 'Error',
+        description: `Could not delete message: ${error.message}`,
+      });
     }
   };
 
-  const handleUpdateMessage = (chatId: string, messageId: string, content: string) => {
-    const newChats = chats.map((chat) => {
-      if (chat.id === chatId) {
-        return {
-          ...chat,
-          messages: chat.messages.map((m) =>
-            m.id === messageId ? { ...m, content, file: m.file } : m
-          ),
-        };
-      }
-      return chat;
-    });
-
-    setChats(newChats);
-    if (selectedChat?.id === chatId) {
-        const updatedChat = newChats.find((chat) => chat.id === chatId);
-        if (updatedChat) {
-            setSelectedChat(updatedChat);
-        }
+  const handleUpdateMessage = async (chatId: string, messageId: string, content: string) => {
+    try {
+      await updateDoc(doc(db, `chats/${chatId}/messages`, messageId), {
+        content: content,
+        editedAt: serverTimestamp(),
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: 'Error',
+        description: `Could not update message: ${error.message}`,
+      });
     }
   };
 
@@ -234,6 +283,7 @@ export default function ChatPage() {
           <ChatSidebar
             currentUser={currentUser}
             chats={chats}
+            allUsers={allUsers}
             selectedChat={selectedChat}
             handleSelectChat={handleSelectChat}
             isCreateGroupOpen={isCreateGroupOpen}
@@ -246,6 +296,7 @@ export default function ChatPage() {
           <ChatArea
             selectedChat={selectedChat}
             currentUser={currentUser}
+            allUsers={allUsers}
             messages={messages}
             isManageGroupOpen={isManageGroupOpen}
             setIsManageGroupOpen={setIsManageGroupOpen}

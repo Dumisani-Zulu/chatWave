@@ -1,5 +1,5 @@
 
-'use client';
+"use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -29,14 +29,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
-        // Map Firebase user to your app's user type
-        const appUser: User = {
-          id: fbUser.uid,
-          name: fbUser.displayName || 'Anonymous User',
-          avatar: fbUser.photoURL || `https://placehold.co/100x100?text=${(fbUser.displayName || 'A').charAt(0)}`,
-          bio: user?.bio || '', // Persist bio if it was updated locally
-        };
-        setUser(appUser);
+        setUser((currentUser) => ({
+            id: fbUser.uid,
+            name: fbUser.displayName || 'Anonymous User',
+            avatar: fbUser.photoURL || `https://placehold.co/100x100?text=${(fbUser.displayName || 'A').charAt(0)}`,
+            bio: currentUser?.bio || '', // Persist bio from local state across auth changes
+        }));
       } else {
         setUser(null);
       }
@@ -44,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [user?.bio]); // Re-run if bio changes
+  }, []);
 
   const updateUser = (newUser: User) => {
     setUser(newUser);

@@ -26,12 +26,14 @@ import { ChatArea } from "@/components/chat/chat-area";
 import { AuthGuard } from "@/components/auth-guard";
 import { useToast } from "@/hooks/use-toast";
 
+type RawChat = Omit<Chat, 'users'>;
+
 export default function ChatPage() {
   const { user: currentUser, firebaseUser, updateUserProfile } = useAuth();
   const { toast } = useToast();
 
   const [allUsers, setAllUsers] = React.useState<User[]>([]);
-  const [chats, setChats] = React.useState<Chat[]>([]);
+  const [rawChats, setRawChats] = React.useState<RawChat[]>([]);
   const [selectedChat, setSelectedChat] = React.useState<Chat | null>(null);
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = React.useState(false);
@@ -63,23 +65,24 @@ export default function ChatPage() {
     );
 
     const unsubscribe = onSnapshot(chatsQuery, (querySnapshot) => {
-      const chatsData = querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        const chatUsers = data.userIds
-          ? data.userIds.map((id: string) => allUsers.find(u => u.id === id)).filter(Boolean)
-          : [];
-
-        return {
+      const chatsData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...data,
-          users: chatUsers,
-        } as Chat;
-      });
-      setChats(chatsData);
+          ...doc.data(),
+        }) as RawChat);
+      setRawChats(chatsData);
     });
 
     return () => unsubscribe();
-  }, [currentUser?.id, allUsers]);
+  }, [currentUser?.id]);
+
+  const chats: Chat[] = React.useMemo(() => {
+    return rawChats.map(chat => {
+      const users = chat.userIds
+        .map((id: string) => allUsers.find(u => u.id === id))
+        .filter(Boolean) as User[];
+      return { ...chat, users };
+    });
+  }, [rawChats, allUsers]);
 
   // Listen for message updates in the selected chat
   React.useEffect(() => {

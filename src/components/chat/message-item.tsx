@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from '@/components/ui/textarea';
 import { Button, buttonVariants } from '@/components/ui/button';
 import type { Message, User } from '@/lib/types';
+import { format, differenceInHours } from 'date-fns';
 
 interface MessageItemProps {
   chatId: string;
@@ -36,6 +37,20 @@ export function MessageItem({ chatId, message, isCurrentUser, onPreviewFile, han
     setEditedContent(message.content);
     setIsEditing(false);
   };
+
+  const formattedTimestamp = React.useMemo(() => {
+    if (!message.timestamp) return '';
+    const messageDate = new Date(message.timestamp);
+    const now = new Date();
+    const hoursDifference = differenceInHours(now, messageDate);
+
+    if (hoursDifference < 24) {
+      return format(messageDate, 'p'); // e.g., '12:00 PM'
+    } else {
+      return format(messageDate, 'eee, p'); // e.g., 'Wed, 12:00 PM'
+    }
+  }, [message.timestamp]);
+
 
   return (
     <div
@@ -112,10 +127,8 @@ export function MessageItem({ chatId, message, isCurrentUser, onPreviewFile, han
                   : "text-muted-foreground"
               )}
             >
-              {new Date(message.timestamp).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {message.editedAt && 'edited • '}
+              {formattedTimestamp}
             </p>
           </>
         )}

@@ -66,6 +66,7 @@ export function UserProfileDialog({
   const [isEditing, setIsEditing] = React.useState(false);
   const [existingChat, setExistingChat] = React.useState<Chat | null>(null);
   const [sharedFiles, setSharedFiles] = React.useState<(Message['file'])[]>([]);
+  const [mutualGroups, setMutualGroups] = React.useState<Chat[]>([]);
   const [isLoadingFiles, setIsLoadingFiles] = React.useState(false);
 
   const isCurrentUser = user?.id === currentUser.id;
@@ -94,17 +95,18 @@ export function UserProfileDialog({
     if (!isOpen || !user || isCurrentUser) {
       setExistingChat(null);
       setSharedFiles([]);
+      setMutualGroups([]);
       return;
     }
 
-    const findChatAndFiles = async () => {
+    const findData = async () => {
       setIsLoadingFiles(true);
+      
       const chat = chats.find(c => 
         c.type === 'dm' && 
         c.userIds.includes(currentUser.id) && 
         c.userIds.includes(user.id)
       );
-
       setExistingChat(chat || null);
 
       if (chat) {
@@ -113,10 +115,17 @@ export function UserProfileDialog({
       } else {
         setSharedFiles([]);
       }
+
+      const commonGroups = chats.filter(c =>
+          c.type === 'group' &&
+          c.userIds.includes(user.id)
+      );
+      setMutualGroups(commonGroups);
+
       setIsLoadingFiles(false);
     };
 
-    findChatAndFiles();
+    findData();
 
   }, [isOpen, user, isCurrentUser, chats, currentUser.id, getSharedFiles]);
 
@@ -238,39 +247,78 @@ export function UserProfileDialog({
             </div>
 
             {!isCurrentUser && (
-              <div className="pt-4 space-y-2">
+              <div className="pt-4">
                 <Separator />
-                <h3 className="text-sm font-medium text-muted-foreground px-1 pt-2">Shared Files</h3>
-                {isLoadingFiles ? (
-                  <div className="flex justify-center items-center h-24">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : existingChat ? (
-                  sharedFiles.length > 0 ? (
-                    <ScrollArea className="h-28">
-                      <div className="space-y-1 pr-4">
-                        {sharedFiles.map((file, index) => (
-                           <button 
-                            key={index} 
-                            onClick={() => onPreviewFile(file)} 
-                            className="flex w-full text-left items-center gap-2 rounded-md p-2 text-sm hover:bg-muted"
-                          >
-                            <FileIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                            <span className="truncate">{file?.name}</span>
-                          </button>
-                        ))}
+                <Tabs defaultValue="files" className="w-full pt-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="files">Shared Files</TabsTrigger>
+                    <TabsTrigger value="groups">Mutual Groups</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="files" className="mt-4">
+                    {isLoadingFiles ? (
+                      <div className="flex justify-center items-center h-28">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                       </div>
-                    </ScrollArea>
-                  ) : (
-                    <div className="text-center text-sm text-muted-foreground py-6">
-                      No files shared yet.
-                    </div>
-                  )
-                ) : (
-                  <div className="text-center text-sm text-muted-foreground py-6">
-                    Start a conversation to share files.
-                  </div>
-                )}
+                    ) : existingChat ? (
+                      sharedFiles.length > 0 ? (
+                        <ScrollArea className="h-28">
+                          <div className="space-y-1 pr-4">
+                            {sharedFiles.map((file, index) => (
+                              <button 
+                                key={index} 
+                                onClick={() => onPreviewFile(file)} 
+                                className="flex w-full text-left items-center gap-2 rounded-md p-2 text-sm hover:bg-muted"
+                              >
+                                <FileIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{file?.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      ) : (
+                        <div className="text-center text-sm text-muted-foreground h-28 flex items-center justify-center">
+                          <p>No files shared yet.</p>
+                        </div>
+                      )
+                    ) : (
+                      <div className="text-center text-sm text-muted-foreground h-28 flex items-center justify-center">
+                        <p>Start a conversation to share files.</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="groups" className="mt-4">
+                    {isLoadingFiles ? (
+                      <div className="flex justify-center items-center h-28">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : mutualGroups.length > 0 ? (
+                      <ScrollArea className="h-28">
+                        <div className="space-y-1 pr-4">
+                          {mutualGroups.map((group) => (
+                            <button
+                              key={group.id}
+                              onClick={() => {
+                                onViewChat(group);
+                                onOpenChange(false);
+                              }}
+                              className="flex w-full text-left items-center gap-2 rounded-md p-2 text-sm hover:bg-muted"
+                            >
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={group.avatar} alt={group.name} />
+                                <AvatarFallback>{group.name?.[0]}</AvatarFallback>
+                              </Avatar>
+                              <span className="truncate font-medium">{group.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    ) : (
+                      <div className="text-center text-sm text-muted-foreground h-28 flex items-center justify-center">
+                        <p>No groups in common.</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
 

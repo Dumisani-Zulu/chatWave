@@ -16,6 +16,7 @@ import {
   deleteDoc,
   serverTimestamp,
   Timestamp,
+  getDocs,
 } from "firebase/firestore";
 import { useAuth } from "@/hooks/use-auth";
 import type { Chat, User, Message } from "@/lib/types";
@@ -182,7 +183,7 @@ export default function ChatPage() {
     const allMemberIds = Array.from(new Set([currentUser.id, ...memberIds]));
 
     try {
-        await addDoc(collection(db, "chats"), {
+        const newChatRef = await addDoc(collection(db, "chats"), {
             name,
             type: "group",
             userIds: allMemberIds,
@@ -193,6 +194,11 @@ export default function ChatPage() {
             description: "A new group chat.",
         });
         setIsCreateGroupOpen(false);
+        // Select the newly created group chat
+        const newChat = chats.find(chat => chat.id === newChatRef.id);
+        if (newChat) {
+          handleSelectChat(newChat);
+        }
     } catch (error: any) {
         toast({ variant: "destructive", title: "Error", description: `Could not create group: ${error.message}` });
     }
@@ -220,13 +226,26 @@ export default function ChatPage() {
         return;
       }
 
-      await addDoc(collection(db, 'chats'), {
+      const newChatRef = await addDoc(collection(db, 'chats'), {
         name: `${currentUser.name} & ${otherUser.name}`,
         type: 'dm',
         userIds: [currentUser.id, otherUserId],
         createdAt: serverTimestamp(),
         lastMessageAt: serverTimestamp(),
       });
+      // This is a bit of a workaround to immediately select the new chat.
+      // A better solution would involve listening to the new chat document.
+      const newChatSnapshot = await getDocs(query(collection(db, "chats"), where("__name__", "==", newChatRef.id)));
+      if (!newChatSnapshot.empty) {
+        const doc = newChatSnapshot.docs[0];
+        const data = doc.data();
+        const createdChat = {
+          id: doc.id,
+          ...data,
+          users: [currentUser, otherUser],
+        } as Chat
+        handleSelectChat(createdChat);
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -331,6 +350,16 @@ export default function ChatPage() {
     setViewedUser(user);
   };
 
+  const getSharedFiles = async (chatId: string): Promise<Message['file'][]> => {
+    const filesQuery = query(
+      collection(db, `chats/${chatId}/messages`),
+      where('file', '!=', null),
+      orderBy('file')
+    );
+    const querySnapshot = await getDocs(filesQuery);
+    return querySnapshot.docs.map(doc => doc.data().file as Message['file']).filter(Boolean);
+  };
+
   const conversationHistory = messages.map(m => `${m.user.name}: ${m.content}`).join('\n');
 
   if (!currentUser) {
@@ -383,13 +412,20 @@ export default function ChatPage() {
             handleViewProfile={handleViewProfile}
           />
           <FilePreviewDialog file={previewFile} onClose={() => setPreviewFile(null)} />
-          <UserProfileDialog
-            user={viewedUser}
-            currentUser={currentUser}
-            onUpdateUser={handleUpdateUser}
-            isOpen={!!viewedUser}
-            onOpenChange={(isOpen) => !isOpen && setViewedUser(null)}
-          />
+          {viewedUser && (
+            <UserProfileDialog
+              user={viewedUser}
+              currentUser={currentUser}
+              onUpdateUser={handleUpdateUser}
+              isOpen={!!viewedUser}
+              onOpenChange={(isOpen) => !isOpen && setViewedUser(null)}
+              chats={chats}
+              onStartChat={handleCreateDmChat}
+              onViewChat={handleSelectChat}
+              getSharedFiles={getSharedFiles}
+              onPreviewFile={setPreviewFile}
+            />
+          )}
         </div>
       </SidebarProvider>
     </AuthGuard>
